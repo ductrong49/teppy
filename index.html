@@ -19,6 +19,29 @@
         line-height: 1.3;
         text-shadow: 1px 1px 3px #fff;
     }
+
+    /* nhóm I-J trên cùng */
+    #top-groups {
+        display: flex;
+        gap: 20px;
+        margin: 25px 0;
+        justify-content: space-between;
+    }
+    .top-group {
+        flex: 1;
+        background: rgba(255,255,255,0.85);
+        border: 3px solid #e53e3e;
+        border-radius: 12px;
+        padding: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    .top-title {
+        text-align: center;
+        font-weight: bold;
+        margin-bottom: 8px;
+        font-size: 18px;
+    }
+
     .group {
         margin: 25px 0;
         padding: 10px;
@@ -33,6 +56,7 @@
         margin-bottom: 10px;
         font-size: 20px;
     }
+
     table {
         width: 100%;
         border-collapse: collapse;
@@ -48,6 +72,10 @@
         background: #c6e2ff;
         font-weight: bold;
     }
+
+    .small-table th {
+        background: #ffe5e5;
+    }
 </style>
 </head>
 <body>
@@ -56,6 +84,10 @@
 <h2>PICKLEBALL CUP</h2>
 <h3>21/12/2025</h3>
 
+<!-- Nhóm I-J ngang -->
+<div id="top-groups"></div>
+
+<!-- Nhóm A-G -->
 <div id="groups"></div>
 
 <script>
@@ -72,7 +104,9 @@ async function loadData() {
         const json = JSON.parse(text);
         const rows = json.table.rows.map(r => r.c.map(c => c ? c.v : ""));
 
+        renderTopGroups(rows);
         renderGroups(rows);
+
     } catch (e) {
         console.error("Lỗi tải dữ liệu:", e);
     }
@@ -82,21 +116,40 @@ function getRange(rows, start, end) {
     return rows.slice(start - 1, end);
 }
 
-function renderTable(range) {
-    let html = "<table>";
+function renderTable(range, colStart, colEnd, small = false) {
+    let cls = small ? "small-table" : "";
+    let html = `<table class="${cls}">`;
     range.forEach((row, idx) => {
         html += "<tr>";
-        row.slice(0, 7).forEach(cell => {
-            if (idx < 2) {
-                html += `<th>${cell}</th>`;
-            } else {
-                html += `<td>${cell}</td>`;
-            }
+        row.slice(colStart, colEnd).forEach(cell => {
+            if (idx < 2) html += `<th>${cell}</th>`;
+            else html += `<td>${cell}</td>`;
         });
         html += "</tr>";
     });
     html += "</table>";
     return html;
+}
+
+function renderTopGroups(rows) {
+    const groups = [
+        { title: "NHÓM I (I1:J6)", start: 1, end: 6 },
+        { title: "NHÓM I2 (I10:J15)", start: 10, end: 15 },
+        { title: "NHÓM I3 (I19:J24)", start: 19, end: 24 },
+        { title: "NHÓM I4 (I28:J33)", start: 28, end: 33 },
+    ];
+
+    let html = "";
+    groups.forEach(g => {
+        const range = getRange(rows, g.start, g.end);
+        html += `
+            <div class="top-group">
+                <div class="top-title">${g.title}</div>
+                ${renderTable(range, 8, 10, true)}
+            </div>
+        `;
+    });
+    document.getElementById("top-groups").innerHTML = html;
 }
 
 function renderGroups(rows) {
@@ -113,7 +166,7 @@ function renderGroups(rows) {
         html += `
             <div class="group">
                 <div class="group-title">${g.title}</div>
-                ${renderTable(range)}
+                ${renderTable(range, 0, 7)}
             </div>
         `;
     });
@@ -121,7 +174,6 @@ function renderGroups(rows) {
     document.getElementById("groups").innerHTML = html;
 }
 
-// Tự cập nhật mỗi 1 giây
 loadData();
 setInterval(loadData, 1000);
 </script>
