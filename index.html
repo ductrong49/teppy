@@ -71,20 +71,21 @@
     font-weight: bold;
   }
 
-  /* === PHÂN NHÓM === */
-  .group-break {
-    height: 20px;                   /* khoảng cách lớn hơn */
-    background: transparent;
+  /* ===== PHÂN NHÓM ===== */
+  .group-box {
+    border: 3px solid #0f172a;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 26px;
+    background: #ffffffdd;
   }
 
-  .group-border {
-    border-top: 4px solid #0f172a !important;   /* viền đậm hơn */
-  }
-
-  /* nền nhạt khu vực ngay sau dòng trống */
-  .group-space {
-    background: rgba(0,0,0,0.03);
-    height: 8px;
+  .group-title {
+    font-weight: bold;
+    font-size: 18px;
+    color: #0f172a;
+    margin-bottom: 10px;
+    text-align: center;
   }
 
   .loading {
@@ -108,6 +109,7 @@
 </div>
 
 <script>
+/* Fetch GVIZ */
 function qvFetchJSON(sheetId, sheetName) {
   const base =
     "https://docs.google.com/spreadsheets/d/" +
@@ -118,74 +120,89 @@ function qvFetchJSON(sheetId, sheetName) {
   return fetch(base, { cache: "no-store" })
     .then(r => r.text())
     .then(text => {
-      const m = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]+)\);?/);
+      const m = text.match(/setResponse\\(([\\s\\S]+)\\)/);
       if (!m) throw new Error("Không đọc được dữ liệu!");
       return JSON.parse(m[1]);
     });
 }
 
-function sheetToTable(data) {
-  const cols = data.table.cols || [];
-  const rows = data.table.rows || [];
+/* Tách nhóm từ sheet */
+function splitGroups(rows) {
+  const groups = [
+    { start: 0, end: 7 },   // A1:G8
+    { start: 9, end: 16 },  // A10:G17
+    { start: 18, end: 25 }, // A19:G26
+    { start: 27, end: 34 }  // A28:G35
+  ];
 
-  const thead =
-    "<tr>" +
-    cols.map(c => "<th>" + (c.label || "") + "</th>").join("") +
-    "</tr>";
-
-  let tbody = "";
-
-  rows.forEach((r, i) => {
-    const isEmptyRow = r.c.every(cell => !cell || cell.v === null || cell.v === "");
-
-    if (isEmptyRow) {
-      tbody +=
-        `<tr><td class="group-break" colspan="${cols.length}"></td></tr>
-         <tr><td class="group-space" colspan="${cols.length}"></td></tr>`;
-      return;
-    }
-
-    const prevRow = rows[i - 1];
-    const wasPrevEmpty =
-      i > 0 &&
-      prevRow.c.every(cell => !cell || cell.v === null || cell.v === "");
-
-    const borderClass = wasPrevEmpty ? "group-border" : "";
-
-    tbody += `<tr class="${borderClass}">` +
-      r.c
-        .map(cell => "<td>" + (cell && cell.v != null ? escapeHtml(cell.v) : "") + "</td>")
-        .join("") +
-      "</tr>";
+  return groups.map(g => {
+    const title1 = rows[g.start]?.c || [];
+    const title2 = rows[g.start + 1]?.c || [];
+    const data = rows.slice(g.start + 2, g.end + 1);
+    return { title1, title2, data };
   });
-
-  return "<table><thead>" + thead + "</thead><tbody>" + tbody + "</tbody></table>";
 }
 
-function escapeHtml(v) {
-  return String(v)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+function esc(v) {
+  return v == null ? "" : String(v)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
 }
 
-/* === AUTO REFRESH MỖI 1 GIÂY === */
+/* Render nhóm */
+function renderGroups(groups, cols) {
+  const wrap = document.getElementById("tableWrap");
+  wrap.innerHTML = "";
+
+  groups.forEach(g => {
+    const box = document.createElement("div");
+    box.className = "group-box";
+
+    const title = document.createElement("div");
+    title.className = "group-title";
+
+    title.innerHTML =
+      esc(g.title1.map(c => c?.v ?? "").join(" ")) + "<br>" +
+      esc(g.title2.map(c => c?.v ?? "").join(" "));
+
+    box.appendChild(title);
+
+    const table = document.createElement("table");
+
+    let header = "<tr>" + cols.map(c => "<th>"+esc(c.label)+"</th>").join("") + "</tr>";
+    let body = "";
+
+    g.data.forEach(r => {
+      body += "<tr>" +
+        r.c.map(cell => "<td>"+ esc(cell?.v) +"</td>").join("") +
+        "</tr>";
+    });
+
+    table.innerHTML = "<thead>" + header + "</thead><tbody>" + body + "</tbody>";
+    box.appendChild(table);
+    wrap.appendChild(box);
+  });
+}
+
+/* Auto refresh */
 const SHEET_ID = "1QOnDy3RJydEpNXnuTdRzUTwCNohp00FzZxA7xCraXAY";
 const SHEET_NAME = "bang";
-
-const tableWrap = document.getElementById("tableWrap");
-const status = document.getElementById("status");
 
 function loadSheet() {
   qvFetchJSON(SHEET_ID, SHEET_NAME)
     .then(data => {
-      tableWrap.innerHTML = sheetToTable(data);
-      status.textContent =
-        "Cập nhật: " + new Date().toLocaleTimeString() +
-        " — Số hàng: " + (data.table.rows ? data.table.rows.length : 0);
+      const rows = data.table.rows || [];
+      const cols = data.table.cols || [];
+
+      const groups = splitGroups(rows);
+      renderGroups(groups, cols);
+
+      document.getElementById("status").textContent =
+        "Cập nhật: " + new Date().toLocaleTimeString();
     })
     .catch(err => {
-      status.textContent = "Lỗi: " + err.message;
+      document.getElementById("status").textContent = "Lỗi: " + err.message;
     });
 }
 
