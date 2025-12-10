@@ -12,12 +12,10 @@
     padding: 25px;
     color: #111;
 
-    /* ẢNH NỀN */
     background: url("image.jpg") no-repeat center center fixed;
     background-size: cover;
   }
 
-  /* Lớp phủ mờ để đọc nội dung rõ */
   body::before {
     content: "";
     position: fixed;
@@ -32,22 +30,9 @@
     margin-bottom: 25px;
     line-height: 1.4;
   }
-  .title h1 {
-    margin: 0;
-    font-size: 32px;
-    font-weight: bold;
-    color: #0f172a;
-  }
-  .title h2 {
-    margin: 0;
-    font-size: 26px;
-    color: #1e3a8a;
-  }
-  .title h3 {
-    margin: 0;
-    font-size: 20px;
-    color: #475569;
-  }
+  .title h1 { margin: 0; font-size: 32px; font-weight: bold; color: #0f172a; }
+  .title h2 { margin: 0; font-size: 26px; color: #1e3a8a; }
+  .title h3 { margin: 0; font-size: 20px; color: #475569; }
 
   .card {
     background: #ffffffcc;
@@ -77,37 +62,35 @@
     padding: 8px 10px;
   }
 
-  /* Hàng xen kẽ */
-  tbody tr:nth-child(odd) {
-    background: #f8fafc;
-  }
-  tbody tr:nth-child(even) {
-    background: #eef2f7;
-  }
+  tbody tr:nth-child(odd) { background: #f8fafc; }
+  tbody tr:nth-child(even) { background: #eef2f7; }
+  tbody tr:hover { background: #dbeafe; }
 
-  tbody tr:hover {
-    background: #dbeafe;
-  }
-
-  /* Cột đầu tiên nổi bật */
   td:first-child {
     background: #e0ecff;
     font-weight: bold;
   }
 
-  /* --- VIỀN NHÓM BẢNG --- */
+  /* === PHÂN NHÓM === */
   .group-break {
-    height: 10px;
+    height: 20px;                   /* khoảng cách lớn hơn */
+    background: transparent;
   }
+
   .group-border {
-    border-top: 3px solid #0f172a;
+    border-top: 4px solid #0f172a !important;   /* viền đậm hơn */
+  }
+
+  /* nền nhạt khu vực ngay sau dòng trống */
+  .group-space {
+    background: rgba(0,0,0,0.03);
+    height: 8px;
   }
 
   .loading {
     margin-top: 10px;
     color: #0f172a;
   }
-
 </style>
 </head>
 
@@ -125,7 +108,6 @@
 </div>
 
 <script>
-/* ===== LẤY DỮ LIỆU GVIZ ===== */
 function qvFetchJSON(sheetId, sheetName) {
   const base =
     "https://docs.google.com/spreadsheets/d/" +
@@ -142,8 +124,6 @@ function qvFetchJSON(sheetId, sheetName) {
     });
 }
 
-/* ===== CHUYỂN JSON → TABLE HTML ===== */
-/* Nhận biết dòng TRỐNG để tạo khoảng cách nhóm */
 function sheetToTable(data) {
   const cols = data.table.cols || [];
   const rows = data.table.rows || [];
@@ -154,12 +134,14 @@ function sheetToTable(data) {
     "</tr>";
 
   let tbody = "";
+
   rows.forEach((r, i) => {
     const isEmptyRow = r.c.every(cell => !cell || cell.v === null || cell.v === "");
 
     if (isEmptyRow) {
       tbody +=
-        `<tr><td class="group-break" colspan="${cols.length}"></td></tr>`;
+        `<tr><td class="group-break" colspan="${cols.length}"></td></tr>
+         <tr><td class="group-space" colspan="${cols.length}"></td></tr>`;
       return;
     }
 
@@ -187,7 +169,7 @@ function escapeHtml(v) {
     .replace(/>/g, "&gt;");
 }
 
-/* ===== TẢI & TỰ CẬP NHẬT 1 GIÂY ===== */
+/* === AUTO REFRESH MỖI 1 GIÂY === */
 const SHEET_ID = "1QOnDy3RJydEpNXnuTdRzUTwCNohp00FzZxA7xCraXAY";
 const SHEET_NAME = "bang";
 
@@ -208,7 +190,7 @@ function loadSheet() {
 }
 
 loadSheet();
-setInterval(loadSheet, 1000);  // cập nhật mỗi 1 giây
+setInterval(loadSheet, 1000);
 </script>
 
 </body>
