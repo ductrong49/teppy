@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hiển thị Google Sheet - bang</title>
+
+<style>
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f3f4f6;
+    margin: 20px;
+  }
+  .card {
+    background: #fff;
+    padding: 16px;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 14px;
+  }
+  th, td {
+    border: 1px solid #e5e7eb;
+    padding: 8px 10px;
+  }
+  th {
+    background: #f1f5f9;
+  }
+  .loading {
+    margin-top: 10px;
+    color: #2563eb;
+  }
+</style>
+</head>
+
+<body>
+<div class="card">
+  <h2>Hiển thị toàn bộ Google Sheet: <b>bang</b></h2>
+  <div id="status" class="loading">Đang tải dữ liệu...</div>
+  <div id="tableWrap"></div>
+</div>
+
+<script>
+/* -------- LẤY DỮ LIỆU GVIZ -------- */
+function qvFetchJSON(sheetId, sheetName) {
+  const base =
+    "https://docs.google.com/spreadsheets/d/" +
+    encodeURIComponent(sheetId) +
+    "/gviz/tq?tqx=out:json&sheet=" +
+    encodeURIComponent(sheetName);
+
+  return fetch(base, { cache: "no-store" })
+    .then(r => r.text())
+    .then(text => {
+      const m = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]+)\);?/);
+      if (!m) throw new Error("Không đọc được dữ liệu. Hãy đảm bảo Sheet đã đặt share public hoặc publish to web.");
+      return JSON.parse(m[1]);
+    });
+}
+
+/* -------- CHUYỂN JSON → TABLE HTML -------- */
+function sheetToTable(data) {
+  const cols = data.table.cols || [];
+  const rows = data.table.rows || [];
+
+  const thead =
+    "<tr>" +
+    cols.map(c => "<th>" + (c.label || "") + "</th>").join("") +
+    "</tr>";
+
+  const tbody = rows
+    .map(r => {
+      return (
+        "<tr>" +
+        r.c
+          .map(cell => "<td>" + (cell && cell.v != null ? escapeHtml(cell.v) : "") + "</td>")
+          .join("") +
+        "</tr>"
+      );
+    })
+    .join("");
+
+  return "<table><thead>" + thead + "</thead><tbody>" + tbody + "</tbody></table>";
+}
+
+function escapeHtml(v) {
+  return String(v)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/* -------- TỰ TẢI DỮ LIỆU KHI MỞ TRANG -------- */
+const SHEET_ID = "1QOnDy3RJydEpNXnuTdRzUTwCNohp00FzZxA7xCraXAY";
+const SHEET_NAME = "bang";
+
+const tableWrap = document.getElementById("tableWrap");
+const status = document.getElementById("status");
+
+qvFetchJSON(SHEET_ID, SHEET_NAME)
+  .then(data => {
+    tableWrap.innerHTML = sheetToTable(data);
+    status.textContent =
+      "Đã tải xong. Số hàng: " + (data.table.rows ? data.table.rows.length : 0);
+  })
+  .catch(err => {
+    status.textContent = "Lỗi: " + err.message;
+  });
+</script>
+
+</body>
+</html>
