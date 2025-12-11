@@ -11,7 +11,7 @@
 
   :root{
     --bg:#f4f7fb;
-    --card-bg: rgba(255,255,255,0.9);
+    --card-bg: rgba(255,255,255,0.95);
     --accent-1: #e53e3e;
     --accent-2: #2b6cb0;
     --radius: 12px;
@@ -44,16 +44,30 @@
     gap:14px;
     padding:8px 0 16px;
   }
-  .top-card{
-    min-width:130px;
+  .top-block{ /* mỗi khối (I2:J6 ...) */
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    min-width:150px;
     background:var(--card-bg);
     border-radius:12px;
     border:2px solid var(--accent-2);
-    padding:10px 12px;
+    padding:10px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.12);
+  }
+  .top-card{
+    background: white;
+    border-radius:8px;
+    padding:8px;
+    border:1px solid #ddd;
     text-align:center;
     font-size:0.9rem;
-    box-shadow:0 3px 8px rgba(0,0,0,0.15);
-    white-space:nowrap;
+  }
+  .top-block-title{
+    text-align:center;
+    font-weight:700;
+    font-size:0.92rem;
+    color:var(--accent-2);
   }
 
   /* ====== KHỐI BẢNG ====== */
@@ -100,8 +114,8 @@
   <h2>PICKLEBALL CUP</h2>
   <h3>21/12/2025</h3>
 
-  <!-- TOP GROUPS -->
-  <div id="topGroups" class="top-scroll"></div>
+  <!-- TOP GROUPS: 4 khối I2:J6, I11:J15, I20:J24, I29:J33 -->
+  <div id="topGroups" class="top-scroll" aria-label="Top groups"></div>
 
   <!-- BẢNG CHÍNH -->
   <div id="groups"></div>
@@ -120,11 +134,17 @@
 <script>
 /* ========== CONFIG ========== */
 const SHEET_ID = "1QOnDy3RJydEpNXnuTdRzUTwCNohp00FzZxA7xCraXAY";
+const API = (sheet) => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${sheet}`;
 
-const API = (sheet) =>
-  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${sheet}`;
+/* ========== HELPERS ========== */
+function escapeHtml(s){
+  if(s === null || s === undefined) return "";
+  return String(s).replace(/[&<>"']/g, m =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])
+  );
+}
 
-/* ========== LOAD GOOGLE SHEET ========== */
+/* Lấy sheet dưới dạng mảng hàng (mỗi hàng là mảng ô) */
 async function loadSheet(sheetName){
   const res = await fetch(API(sheetName));
   let text = await res.text();
@@ -133,38 +153,61 @@ async function loadSheet(sheetName){
   return json.table.rows.map(r => r.c ? r.c.map(c => c ? c.v : "") : []);
 }
 
-/* ========== RENDER TOP GROUP CARDS (I:J) ========== */
-function renderTopCard(rows){
-  let html = "";
-  rows.forEach(r=>{
-    const a = r[0] ?? "";
-    const b = r[1] ?? "";
-    if(!a && !b) return;
-    html += `
-      <div class="top-card">
-        <div><b>${a}</b></div>
-        <div>${b}</div>
-      </div>
-    `;
-  });
-  document.getElementById("topGroups").innerHTML += html;
+/* Lấy chính xác 1 vùng bằng chỉ số 1-based:
+   startRow, endRow inclusive; colStart 0-based, colEndExclusive 0-based
+   ví dụ: I2:J6 -> startRow=2,endRow=6, colStart=8, colEnd=10
+*/
+function getRangeRows(rows, startRow, endRow, colStart, colEnd){
+  const out = [];
+  // rows[] is zero-based with row1 at index 0
+  for(let r = startRow - 1; r <= endRow - 1; r++){
+    const row = rows[r] || []; // nếu không có hàng thì []
+    const slice = [];
+    for(let c = colStart; c < colEnd; c++){
+      slice.push(typeof row[c] !== 'undefined' ? row[c] : ""); // fill blank if missing
+    }
+    out.push(slice);
+  }
+  return out;
 }
 
-/* ========== RENDER TABLE ========== */
+/* render một khối top (mảng hàng với 2 cột) */
+function renderTopBlock(rows2cols, title){
+  // tạo block riêng, mỗi ô thành 1 top-card
+  const wrap = document.createElement("div");
+  wrap.className = "top-block";
+
+  const t = document.createElement("div");
+  t.className = "top-block-title";
+  t.textContent = title;
+  wrap.appendChild(t);
+
+  rows2cols.forEach(r=>{
+    const a = escapeHtml(r[0] ?? "");
+    const b = escapeHtml(r[1] ?? "");
+    // nếu cả hai rỗng, hiển thị ô trống nhỏ để giữ khoảng
+    const card = document.createElement("div");
+    card.className = "top-card";
+    card.innerHTML = `<div style="font-weight:600">${a}</div><div>${b}</div>`;
+    wrap.appendChild(card);
+  });
+
+  document.getElementById("topGroups").appendChild(wrap);
+}
+
+/* ========== RENDER TABLES (giữ nguyên logic cũ) ========== */
 function renderTable(range, colStart, colEnd, title, target){
   let html = `
     <div class="group">
-      <div class="group-title">${title}</div>
+      <div class="group-title">${escapeHtml(title)}</div>
       <table>
   `;
   range.forEach((row, idx)=>{
     html += "<tr>";
     const cells = row.slice(colStart, colEnd);
     for(let i=0;i<(colEnd-colStart);i++){
-      const cell = cells[i] ?? "";
-      html += idx < 1
-        ? `<th>${cell}</th>`
-        : `<td>${cell}</td>`;
+      const cell = typeof cells[i] !== "undefined" ? cells[i] : "";
+      html += idx < 1 ? `<th>${escapeHtml(cell)}</th>` : `<td>${escapeHtml(cell)}</td>`;
     }
     html += "</tr>";
   });
@@ -174,36 +217,49 @@ function renderTable(range, colStart, colEnd, title, target){
 
 /* ========== MAIN ========== */
 async function loadAll(){
+  // reset topGroups and lower containers (so reload is clean)
+  document.getElementById("topGroups").innerHTML = "";
+  document.getElementById("groups").innerHTML = "";
+  document.getElementById("sheet18").innerHTML = "";
+  document.getElementById("sheetbk").innerHTML = "";
+  document.getElementById("sheetck").innerHTML = "";
 
-  /* --- sheet bang --- */
   const bang = await loadSheet("bang");
 
-  /* === 4 KHỐI TOP I:J === */
-  renderTopCard(bang.slice(1,6).map(r => r.slice(8,10)));   // I2:J6
-  renderTopCard(bang.slice(10,15).map(r => r.slice(8,10))); // I11:J15
-  renderTopCard(bang.slice(19,24).map(r => r.slice(8,10))); // I20:J24
-  renderTopCard(bang.slice(28,33).map(r => r.slice(8,10))); // I29:J33
+  // ==== 4 KHỐI CHÍNH (chính xác bằng hàm getRangeRows) ====
+  // note: columns: I => index 8, J => index 9. colEnd is exclusive so use 10.
+  const k1 = getRangeRows(bang, 2, 6, 8, 10);   // I2:J6
+  const k2 = getRangeRows(bang, 11,15, 8, 10);  // I11:J15
+  const k3 = getRangeRows(bang, 20,24, 8, 10);  // I20:J24
+  const k4 = getRangeRows(bang, 29,33, 8, 10);  // I29:J33
 
-  /* === BẢNG CHÍNH === */
+  renderTopBlock(k1, "Khối 1 (I2:J6)");
+  renderTopBlock(k2, "Khối 2 (I11:J15)");
+  renderTopBlock(k3, "Khối 3 (I20:J24)");
+  renderTopBlock(k4, "Khối 4 (I29:J33)");
+
+  // ==== BẢNG CHÍNH (giữ như cũ) ====
   renderTable(bang.slice(0,8), 0, 7, "BẢNG CHÍNH (A1:G8)", "groups");
   renderTable(bang.slice(9,17), 0, 7, "BẢNG CHÍNH (A10:G17)", "groups");
   renderTable(bang.slice(18,26), 0, 7, "BẢNG CHÍNH (A19:G26)", "groups");
   renderTable(bang.slice(27,35), 0, 7, "BẢNG CHÍNH (A28:G35)", "groups");
 
-  /* === sheet 1.8 === */
+  // sheet 1.8
   const s18 = await loadSheet("1.8");
   renderTable(s18.slice(0,13), 0, 5, "BẢNG PHỤ — Sheet 1.8 (A1:E13)", "sheet18");
 
-  /* === sheet bk.ck === */
+  // sheet bk.ck
   const sbk = await loadSheet("bk.ck");
   renderTable(sbk.slice(0,15), 0, 4, "BẢNG PHỤ — Sheet bk.ck (A1:D15)", "sheetbk");
 
-  /* === sheet ck === */
+  // sheet ck (A3:C4)
   const sck = await loadSheet("ck");
   renderTable(sck.slice(2,4), 0, 3, "BẢNG PHỤ — Sheet ck (A3:C4)", "sheetck");
 }
 
 loadAll();
+// optional: refresh every 5s
+// setInterval(loadAll, 5000);
 </script>
 
 </body>
