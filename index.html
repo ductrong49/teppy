@@ -37,7 +37,7 @@
   h2{ font-size:1rem; margin-bottom:6px; }
   h3{ font-size:.9rem; margin-bottom:10px; }
 
-  /* ====== KHỐI BẢNG CHÍNH ====== */
+  /* ====== KHỐI BẢNG ====== */
   .group{
     margin: 28px 0; 
     padding: 12px;
@@ -68,9 +68,6 @@
   }
   th{ background:#c6e2ff; font-weight:700; font-size:0.80rem; }
 
-  /* bảng nhỏ (sheet top) */
-  .small-table th{ background:#ffe5e5; }
-
   @media(max-width:420px){
     th,td{ font-size:0.72rem; padding:3px 4px; }
   }
@@ -84,7 +81,7 @@
   <h2>PICKLEBALL CUP</h2>
   <h3>21/12/2025</h3>
 
-  <!-- BẢNG CHÍNH từ sheet bang -->
+  <!-- BẢNG CHÍNH -->
   <div id="groups"></div>
 
   <!-- BẢNG 1.8 -->
@@ -92,6 +89,9 @@
 
   <!-- BẢNG bk.ck -->
   <div id="sheetbk"></div>
+
+  <!-- BẢNG ck (A3:C4) -->
+  <div id="sheetck"></div>
 
 </div>
 
@@ -132,7 +132,6 @@ function renderTable(range, colStart, colEnd, title, target){
   });
 
   html += "</table></div>";
-
   document.getElementById(target).innerHTML += html;
 }
 
@@ -142,7 +141,7 @@ function escapeHtml(s){
   ));
 }
 
-/* ========== MAIN LOAD ========== */
+/* ========== MAIN ========== */
 async function loadAll(){
   /* --- sheet bang --- */
   const bang = await loadSheet("bang");
@@ -158,6 +157,10 @@ async function loadAll(){
   /* --- sheet bk.ck: A1:D15 --- */
   const sbk = await loadSheet("bk.ck");
   renderTable(sbk.slice(0,15), 0, 4, "BẢNG PHỤ — Sheet bk.ck (A1:D15)", "sheetbk");
+
+  /* --- sheet ck: A3:C4 --- */
+  const sck = await loadSheet("ck");
+  renderTable(sck.slice(2,4), 0, 3, "BẢNG PHỤ — Sheet ck (A3:C4)", "sheetck");
 }
 
 loadAll();
