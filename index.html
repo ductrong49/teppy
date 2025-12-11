@@ -157,27 +157,19 @@ function renderTable(range, colStart, colEnd, title, target){
       <div class="group-title">${title}</div>
       <table>
   `;
-
   range.forEach((row, idx)=>{
     html += "<tr>";
     const cells = row.slice(colStart, colEnd);
     for(let i=0;i<(colEnd-colStart);i++){
       const cell = cells[i] ?? "";
       html += idx < 1
-        ? `<th>${escapeHtml(cell)}</th>`
-        : `<td>${escapeHtml(cell)}</td>`;
+        ? `<th>${cell}</th>`
+        : `<td>${cell}</td>`;
     }
     html += "</tr>";
   });
-
   html += "</table></div>";
   document.getElementById(target).innerHTML += html;
-}
-
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g,m=>(
-    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
-  ));
 }
 
 /* ========== MAIN ========== */
@@ -186,7 +178,7 @@ async function loadAll(){
   /* --- sheet bang --- */
   const bang = await loadSheet("bang");
 
-  /* === 4 khối top I:J === */
+  /* === 4 KHỐI TOP I:J === */
   renderTopCard(bang.slice(1,6).map(r => r.slice(8,10)));   // I2:J6
   renderTopCard(bang.slice(10,15).map(r => r.slice(8,10))); // I11:J15
   renderTopCard(bang.slice(19,24).map(r => r.slice(8,10))); // I20:J24
