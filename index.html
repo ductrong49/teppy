@@ -37,22 +37,22 @@
   h2{ font-size:1rem; margin-bottom:6px; }
   h3{ font-size:.9rem; margin-bottom:10px; }
 
-  /* ====== TOP SCROLL GROUPS ====== */
+  /* ====== TOP GROUPS ====== */
   .top-scroll{
     display:flex;
     overflow-x:auto;
-    gap:12px;
-    padding:12px 0;
+    gap:14px;
+    padding:8px 0 16px;
   }
   .top-card{
-    min-width:120px;
+    min-width:130px;
     background:var(--card-bg);
-    border-radius:10px;
+    border-radius:12px;
     border:2px solid var(--accent-2);
-    padding:10px;
+    padding:10px 12px;
     text-align:center;
-    font-size:0.82rem;
-    box-shadow:0 2px 6px rgba(0,0,0,0.12);
+    font-size:0.9rem;
+    box-shadow:0 3px 8px rgba(0,0,0,0.15);
     white-space:nowrap;
   }
 
@@ -100,7 +100,7 @@
   <h2>PICKLEBALL CUP</h2>
   <h3>21/12/2025</h3>
 
-  <!-- KHỐI NGANG TỪ I1:J35 -->
+  <!-- TOP GROUPS -->
   <div id="topGroups" class="top-scroll"></div>
 
   <!-- BẢNG CHÍNH -->
@@ -133,8 +133,8 @@ async function loadSheet(sheetName){
   return json.table.rows.map(r => r.c ? r.c.map(c => c ? c.v : "") : []);
 }
 
-/* ========== RENDER TOP SCROLL CARDS (I:J) ========== */
-function renderTopGroups(rows){
+/* ========== RENDER TOP GROUP CARDS (I:J) ========== */
+function renderTopCard(rows){
   let html = "";
   rows.forEach(r=>{
     const a = r[0] ?? "";
@@ -147,7 +147,7 @@ function renderTopGroups(rows){
       </div>
     `;
   });
-  document.getElementById("topGroups").innerHTML = html;
+  document.getElementById("topGroups").innerHTML += html;
 }
 
 /* ========== RENDER TABLE ========== */
@@ -186,26 +186,27 @@ async function loadAll(){
   /* --- sheet bang --- */
   const bang = await loadSheet("bang");
 
-  /* TOP GROUPS — I1:J35 */
-  renderTopGroups(
-    bang.slice(0,35).map(r => r.slice(8,10))   // cột I (8), J (9)
-  );
+  /* === 4 khối top I:J === */
+  renderTopCard(bang.slice(1,6).map(r => r.slice(8,10)));   // I2:J6
+  renderTopCard(bang.slice(10,15).map(r => r.slice(8,10))); // I11:J15
+  renderTopCard(bang.slice(19,24).map(r => r.slice(8,10))); // I20:J24
+  renderTopCard(bang.slice(28,33).map(r => r.slice(8,10))); // I29:J33
 
-  /* BẢNG CHÍNH */
+  /* === BẢNG CHÍNH === */
   renderTable(bang.slice(0,8), 0, 7, "BẢNG CHÍNH (A1:G8)", "groups");
   renderTable(bang.slice(9,17), 0, 7, "BẢNG CHÍNH (A10:G17)", "groups");
   renderTable(bang.slice(18,26), 0, 7, "BẢNG CHÍNH (A19:G26)", "groups");
   renderTable(bang.slice(27,35), 0, 7, "BẢNG CHÍNH (A28:G35)", "groups");
 
-  /* sheet 1.8 */
+  /* === sheet 1.8 === */
   const s18 = await loadSheet("1.8");
   renderTable(s18.slice(0,13), 0, 5, "BẢNG PHỤ — Sheet 1.8 (A1:E13)", "sheet18");
 
-  /* sheet bk.ck */
+  /* === sheet bk.ck === */
   const sbk = await loadSheet("bk.ck");
   renderTable(sbk.slice(0,15), 0, 4, "BẢNG PHỤ — Sheet bk.ck (A1:D15)", "sheetbk");
 
-  /* sheet ck */
+  /* === sheet ck === */
   const sck = await loadSheet("ck");
   renderTable(sck.slice(2,4), 0, 3, "BẢNG PHỤ — Sheet ck (A3:C4)", "sheetck");
 }
