@@ -61,7 +61,6 @@
     font-size: clamp(14px, 1.6vw, 20px);
   }
 
-  /* nhỏ cho khung DOI vuốt ngang (nếu muốn sau này) */
   .doi-scroll{
     display:flex;
     gap:12px;
@@ -91,7 +90,6 @@ function loadSheetPromise(sheetName, range){
     );
     q.send(res=>{
       if(res.isError()){
-        // resolve null để vẫn cho luồng chạy; bạn có thể handle lỗi riêng nếu cần
         resolve(null);
       } else {
         resolve(res.getDataTable());
@@ -100,17 +98,27 @@ function loadSheetPromise(sheetName, range){
   });
 }
 
-/* DataTable -> HTML table */
+/* DataTable -> HTML table WITH " - " NEWLINE SUPPORT */
 function tableToHTML(data){
   if(!data) return '<div style="padding:8px;color:#a00">Không thể tải dữ liệu</div>';
+
   let html = "<table><tbody>";
+
   for(let r=0;r<data.getNumberOfRows();r++){
     html += "<tr>";
+
     for(let c=0;c<data.getNumberOfColumns();c++){
-      html += `<td>${data.getValue(r,c) ?? ""}</td>`;
+      let cell = (data.getValue(r,c) ?? "").toString();
+
+      /* ✨ Xuống dòng đúng chuẩn ở dạng " - " */
+      cell = cell.replace(/ - /g, " -\u200B ");
+
+      html += `<td>${cell}</td>`;
     }
+
     html += "</tr>";
   }
+
   html += "</tbody></table>";
   return html;
 }
@@ -119,7 +127,6 @@ function tableToHTML(data){
    LOAD & RENDER (theo thứ tự)
    ============================ */
 
-/* DOI: lấy chính xác 4 range theo thứ tự và render theo thứ tự */
 async function loadDoiOrdered(){
   const ranges = [
     {range:"A1:B5", label:"Bảng A"},
@@ -128,7 +135,6 @@ async function loadDoiOrdered(){
     {range:"A19:B23", label:"Bảng D"}
   ];
 
-  // lấy tuần tự từng range (await) để đảm bảo thứ tự hiển thị
   let html = '<div class="doi-scroll">';
   for(const r of ranges){
     const data = await loadSheetPromise("doi", r.range);
@@ -142,7 +148,6 @@ async function loadDoiOrdered(){
   document.getElementById('sheet-doi').innerHTML = html;
 }
 
-/* BANG: lấy từng khối theo thứ tự trên xuống */
 async function loadBangOrdered(){
   const ranges = [
     {range:"A2:G8", label:"BẢNG A"},
@@ -160,7 +165,6 @@ async function loadBangOrdered(){
   document.getElementById('sheet-bang').innerHTML = html;
 }
 
-/* Các sheet khác giữ nguyên thứ tự */
 async function loadOtherSheets(){
   const data18 = await loadSheetPromise("1.8","A1:E12");
   document.getElementById('sheet-18').innerHTML = tableToHTML(data18);
@@ -172,22 +176,15 @@ async function loadOtherSheets(){
   document.getElementById('sheet-ck').innerHTML = tableToHTML(datack);
 }
 
-/* Hàm tải tất cả theo thứ tự an toàn.
-   Gọi lần lượt để tránh race condition và đảm bảo thứ tự hiển thị.
-*/
 async function reloadAllOrdered(){
-  await loadDoiOrdered();    // DOI (4 blocks) — hiển thị trước
-  await loadBangOrdered();   // BANG (4 blocks)
-  await loadOtherSheets();   // 1.8, bk, ck
+  await loadDoiOrdered();
+  await loadBangOrdered();
+  await loadOtherSheets();
 }
 
-/* thiết lập load ban đầu và auto-refresh 1s nếu bạn muốn */
-/* Nếu bạn không cần auto-refresh, bỏ setInterval */
 google.charts.setOnLoadCallback(()=>{
-  // chạy lần đầu
   reloadAllOrdered();
-  // nếu muốn auto update mỗi 1s uncomment dòng dưới:
-  setInterval(reloadAllOrdered, 60000);
+  setInterval(reloadAllOrdered, 60000); // 60s refresh
 });
 </script>
 </head>
