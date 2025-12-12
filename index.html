@@ -2,113 +2,112 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>BẢNG THI ĐẤU</title>
 
 <style>
   :root{
     --card-bg: rgba(255,255,255,0.92);
-    --border: #2b6cb0;
+    --border: #1a4e9e;
   }
   *{ box-sizing:border-box; }
   body{
     margin:0;
-    background:url("image.jpg") center/cover no-repeat fixed;
-    font-family:Arial, Helvetica, sans-serif;
-    padding:14px;
+    font-family: Arial, Helvetica, sans-serif;
+    background:url("image.jpg") center/cover fixed no-repeat;
+    padding:16px;
     font-size:clamp(15px,4vw,18px);
   }
   .container{
     max-width:950px;
     margin:auto;
   }
+
   h1,h2{
     text-align:center;
     margin:0;
     padding:0;
-    color:white;
-    text-shadow:1px 1px 4px black;
+    color:#fff;
+    text-shadow:1px 1px 3px #000;
   }
-  h1{ font-size:1.4rem; margin-bottom:6px; }
-  h2{ font-size:1.1rem; margin-bottom:18px; }
+  h1{ font-size:1.4rem; margin-bottom:4px; }
+  h2{ font-size:1.1rem; margin-bottom:16px; }
 
-  .section{
-    margin:26px 0;
-    padding:14px;
-    background:var(--card-bg);
-    border-radius:12px;
-    border:2px solid var(--border);
-    box-shadow:0 3px 12px rgba(0,0,0,0.25);
-  }
-  .section-title{
-    font-weight:700;
-    text-align:center;
-    margin-bottom:12px;
-    color:#1a3e6e;
-  }
-
-  /* ---- TOP SCROLL ---- */
+  /* Vuốt ngang */
   .top-scroll{
     display:flex;
-    overflow-x:auto;
     gap:14px;
-    padding-bottom:10px;
+    overflow-x:auto;
+    padding:14px 0 20px;
   }
   .top-block{
-    min-width:150px;
+    min-width:180px;
     background:var(--card-bg);
+    border-radius:14px;
     border:2px solid var(--border);
-    border-radius:12px;
-    padding:10px;
+    padding:12px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.25);
   }
   .top-title{
     text-align:center;
     font-weight:700;
     margin-bottom:8px;
-    color:#1a3e6e;
+    color:var(--border);
   }
   .top-card{
-    background:white;
-    padding:8px;
+    background:#fff;
     border-radius:8px;
-    border:1px solid #ccc;
+    padding:8px;
     text-align:center;
-    margin-bottom:6px;
+    border:1px solid #ccc;
+    margin-bottom:8px;
   }
 
-  /* ----- TABLE ----- */
+  /* Khối dọc */
+  .section{
+    margin:26px 0;
+    padding:12px;
+    background:var(--card-bg);
+    border-radius:12px;
+    border:2px solid var(--border);
+    box-shadow:0 3px 10px rgba(0,0,0,0.20);
+  }
+  .section-title{
+    font-weight:700;
+    margin-bottom:10px;
+    text-align:center;
+    color:#1a3e6e;
+  }
   table{
     width:100%;
     border-collapse:collapse;
     background:white;
   }
-  th, td{
+  th,td{
     border:1px solid #555;
-    padding:6px;
+    padding:6px 6px;
     text-align:center;
   }
-  th{
-    background:#d8ecff;
-    font-weight:700;
-  }
+  th{ background:#d9ecff; font-weight:700; }
+
 </style>
 </head>
-
 <body>
 <div class="container">
 
-<h1>PICKLEBALL CUP</h1>
-<h2>TEPPY & LADIES — 21/12/2025</h2>
+  <h1>PICKLEBALL CUP</h1>
+  <h2>TEPPY & LADIES — 21/12/2025</h2>
 
-<div class="section">
-  <div class="section-title">DANH SÁCH ĐỘI (Sheet doi — A1:B23)</div>
-  <div id="doiScroll" class="top-scroll"></div>
-</div>
+  <!-- SHEET DOI -->
+  <div class="section">
+    <div class="section-title">DANH SÁCH BẢNG (Sheet doi A1:B23)</div>
+    <div id="topScroll" class="top-scroll"></div>
+  </div>
 
-<div id="bangSection"></div>
-<div id="s18Section"></div>
-<div id="bkSection"></div>
-<div id="ckSection"></div>
+  <div id="bangSection"></div>
+  <div id="s18Section"></div>
+  <div id="bkSection"></div>
+  <div id="ckSection"></div>
 
 </div>
 
@@ -117,128 +116,123 @@ const ID = "1QOnDy3RJydEpNXnuTdRzUTwCNohp00FzZxA7xCraXAY";
 const API = s => `https://docs.google.com/spreadsheets/d/${ID}/gviz/tq?sheet=${encodeURIComponent(s)}&tqx=out:json`;
 
 function escapeHTML(s){
-  return (s??"").toString().replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;"," >":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+  return (s??"").toString()
+    .replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
 }
 
-/* LOAD SHEET 2 CỘT CHUẨN CHO sheet doi */
-async function loadSheetDoi(){
-  const res = await fetch(API("doi"));
-  let t = await res.text();
-  t = t.substring(t.indexOf("(")+1, t.lastIndexOf(")"));
-  const json = JSON.parse(t);
-
-  return json.table.rows.map(r=>{
-    return [
-      r.c && r.c[0] && r.c[0].v ? r.c[0].v : "",
-      r.c && r.c[1] && r.c[1].v ? r.c[1].v : ""
-    ];
-  });
-}
-
-async function loadSheet(name, maxCols){
+async function loadSheet(name){
   const res = await fetch(API(name));
   let t = await res.text();
   t = t.substring(t.indexOf("(")+1, t.lastIndexOf(")"));
   const json = JSON.parse(t);
 
-  return json.table.rows.map(r=>{
-    const row = [];
-    for(let i=0;i<maxCols;i++){
-      row.push(r.c && r.c[i] ? r.c[i].v : "");
-    }
-    return row;
-  });
+  return json.table.rows.map(r =>
+    r.c ? r.c.map(c => c?.v ?? "") : []
+  );
 }
 
-/* RENDER TABLE */
-function renderTable(rows, title, target){
-  const wrap = document.createElement("div");
-  wrap.className = "section";
-  wrap.innerHTML = `<div class="section-title">${title}</div>`;
+/* ----------------- SHEET DOI – 4 KHỐI VUỐT NGANG ------------------ */
+function renderDoi(rows){
+  const top = document.getElementById("topScroll");
+  top.innerHTML = "";
 
-  if(rows.length===0){
-    wrap.innerHTML += "<div>Không có dữ liệu</div>";
-    document.getElementById(target).appendChild(wwrap);
-    return;
-  }
+  const titles = ["Bảng A", "Bảng B", "Bảng C", "Bảng D"];
+  const blockSize = 5;
+  let start = 0;
 
-  let html = "<table><tr>";
-  rows[0].forEach(h => html += `<th>${escapeHTML(h)}</th>`);
-  html += "</tr>";
+  for(let i=0;i<4;i++){
+    const block = rows.slice(start, start + blockSize);
+    start += blockSize;
 
-  for(let i=1;i<rows.length;i++){
-    html += "<tr>";
-    rows[i].forEach(c => html += `<td>${escapeHTML(c)}</td>`);
-    html += "</tr>";
-  }
-  html += "</table>";
+    const d = document.createElement("div");
+    d.className = "top-block";
+    d.innerHTML = `<div class="top-title">${titles[i]}</div>`;
 
-  wrap.innerHTML += html;
-  document.getElementById(target).appendChild(wrap);
-}
-
-/* MAIN */
-async function loadAll(){
-
-  /* -------- Sheet doi (A1:B23) -------- */
-  const doi = (await loadSheetDoi()).slice(0,23);
-  const scroll = document.getElementById("doiScroll");
-  scroll.innerHTML = "";
-
-  let idx = 0, block = 1;
-  while(idx < 23){
-    const rows = doi.slice(idx, idx+5);
-    idx+=5;
-
-    const div = document.createElement("div");
-    div.className = "top-block";
-    div.innerHTML = `<div class="top-title">Khối ${block}</div>`;
-    block++;
-
-    rows.forEach(r=>{
+    block.forEach(r=>{
       if(!r[0] && !r[1]) return;
-      div.innerHTML += `
+      d.innerHTML += `
         <div class="top-card">
           <div>${escapeHTML(r[0])}</div>
           <div>${escapeHTML(r[1])}</div>
         </div>`;
     });
 
-    scroll.appendChild(div);
+    top.appendChild(d);
   }
-
-  /* -------- Sheet bang (4 KHỐI) -------- */
-  const bang = await loadSheet("bang", 7);
-
-  const k1 = bang.slice(1,8);   // A2:G8
-  const k2 = bang.slice(10,17); // A11:G17
-  const k3 = bang.slice(19,26); // A20:G26
-  const k4 = bang.slice(28,35); // A29:G35
-
-  const bs = document.getElementById("bangSection");
-  bs.innerHTML = "";
-  renderTable(k1, "BẢNG CHÍNH — KHỐI 1 (A2:G8 — Sheet bang)", "bangSection");
-  renderTable(k2, "BẢNG CHÍNH — KHỐI 2 (A11:G17 — Sheet bang)", "bangSection");
-  renderTable(k3, "BẢNG CHÍNH — KHỐI 3 (A20:G26 — Sheet bang)", "bangSection");
-  renderTable(k4, "BẢNG CHÍNH — KHỐI 4 (A29:G35 — Sheet bang)", "bangSection");
-
-  /* -------- Sheet 1.8 -------- */
-  const s18 = (await loadSheet("1.8",5)).slice(0,12);
-  renderTable(s18, "BẢNG PHỤ — Sheet 1.8 (A1:E12)", "s18Section");
-
-  /* -------- Sheet bk -------- */
-  const bk = (await loadSheet("bk",4)).slice(0,7);
-  renderTable(bk, "BẢNG bk (A1:D7)", "bkSection");
-
-  /* -------- Sheet ck -------- */
-  const ck = (await loadSheet("ck",3)).slice(1,4); // A2:C4
-  renderTable(ck, "BẢNG ck (A2:C4)", "ckSection");
 }
 
-/* cập nhật mỗi 1 giây */
-loadAll();
-setInterval(loadAll, 1000);
+/* ----------------- RENDER TABLE DẠNG 1 KHỐI ------------------ */
+function renderBlock(rows, title, toId){
+  const wrap = document.getElementById(toId);
+  const sec = document.createElement("div");
+  sec.className = "section";
+  sec.innerHTML = `<div class="section-title">${title}</div>`;
 
+  if(rows.length === 0){
+    sec.innerHTML += "<div>Không có dữ liệu</div>";
+    wrap.appendChild(sec);
+    return;
+  }
+
+  let html = "<table>";
+  rows.forEach(r=>{
+    html += "<tr>";
+    for(let i=0;i<7;i++){
+      html += `<td>${escapeHTML(r[i] ?? "")}</td>`;
+    }
+    html += "</tr>";
+  });
+  html += "</table>";
+
+  sec.innerHTML += html;
+  wrap.appendChild(sec);
+}
+
+/* ----------------- LOAD TẤT CẢ ------------------ */
+async function loadAll(){
+
+  /* SHEET DOI */
+  const doi = await loadSheet("doi");
+  renderDoi(doi.slice(0,23));
+
+  /* SHEET BANG: chia 4 khối đúng vùng */
+  const bang = await loadSheet("bang");
+
+  const blockA = bang.slice(1,8);     // A2:G8
+  const blockB = bang.slice(10,17);   // A11:G17
+  const blockC = bang.slice(19,26);   // A20:G26
+  const blockD = bang.slice(28,35);   // A29:G35
+
+  renderBlock(blockA, "BẢNG A – Sheet bang (A2:G8)", "bangSection");
+  renderBlock(blockB, "BẢNG B – Sheet bang (A11:G17)", "bangSection");
+  renderBlock(blockC, "BẢNG C – Sheet bang (A20:G26)", "bangSection");
+  renderBlock(blockD, "BẢNG D – Sheet bang (A29:G35)", "bangSection");
+
+  /* SHEET 1.8 */
+  renderBlock(
+    (await loadSheet("1.8")).slice(0,12),
+    "BẢNG 1.8 – (A1:E12)",
+    "s18Section"
+  );
+
+  /* SHEET bk */
+  renderBlock(
+    (await loadSheet("bk")).slice(0,7),
+    "BẢNG BK – (A1:D7)",
+    "bkSection"
+  );
+
+  /* SHEET ck */
+  const ckFull = await loadSheet("ck");
+  renderBlock(
+    ckFull.slice(1,4),
+    "BẢNG CK – (A2:C4)",
+    "ckSection"
+  );
+}
+
+loadAll();
+setInterval(loadAll, 1000);   // cập nhật mỗi 1 giây
 </script>
 
 </body>
