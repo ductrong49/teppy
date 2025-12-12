@@ -84,7 +84,7 @@ google.charts.load('current', {'packages':['table']});
 
 const SHEET_ID = "1QOnDy3RJydEpNXnuTdRzUTwCNohp00FzZxA7xCraXAY";
 
-/* Promise-based wrapper cho google.visualization.Query */
+/* Promise-based wrapper */
 function loadSheetPromise(sheetName, range){
   return new Promise((resolve) => {
     const q = new google.visualization.Query(
@@ -100,17 +100,12 @@ function loadSheetPromise(sheetName, range){
   });
 }
 
-/* ============================
-   XỬ LÝ XUỐNG DÒNG CHO CỘT TÙY CHỌN
-   ============================ */
+/* ======================================
+   XỬ LÝ XUỐNG DÒNG CHO CỘT C & D
+   CHỈ ÁP DỤNG CHO SHEET: bang, 1.8, bk
+   ====================================== */
 
-/* Cột tùy chọn là cột số 5 → index = 4  
-   (nếu bạn muốn đổi cột khác, đổi số dưới đây)
-*/
-const COLUMN_WITH_LINEBREAK = 4;
-
-/* DataTable -> HTML table */
-function tableToHTML(data){
+function tableToHTML(data, sheetName=""){
   if(!data) return '<div style="padding:8px;color:#a00">Không thể tải dữ liệu</div>';
 
   let html = "<table><tbody>";
@@ -121,9 +116,8 @@ function tableToHTML(data){
     for(let c=0;c<data.getNumberOfColumns();c++){
       let cell = data.getValue(r,c) ?? "";
 
-      // ---- CHỈ XUỐNG DÒNG KHI GẶP " - " ----
-      // ---- CHỈ ÁP DỤNG CHO CỘT TÙY CHỌN ----
-      if (c === COLUMN_WITH_LINEBREAK) {
+      // CHỈ xử lý nếu là sheet bang, 1.8, bk AND cột C,D (index 2,3)
+      if (["bang","1.8","bk"].includes(sheetName) && (c === 2 || c === 3)) {
         cell = cell.toString().replace(/ - /g, "<br>");
       }
 
@@ -153,7 +147,7 @@ async function loadDoiOrdered(){
   for(const r of ranges){
     const data = await loadSheetPromise("doi", r.range);
     html += `<div class="doi-card"><div class="section-title" style="margin:0 0 8px 0">${r.label}</div>`;
-    html += tableToHTML(data);
+    html += tableToHTML(data, "doi");
     html += '</div>';
   }
   html += '</div>';
@@ -173,21 +167,20 @@ async function loadBangOrdered(){
   for(const r of ranges){
     const data = await loadSheetPromise("bang", r.range);
     html += `<div class="section-title">${r.label}</div>`;
-    html += tableToHTML(data);
+    html += tableToHTML(data, "bang");
   }
-
   document.getElementById('sheet-bang').innerHTML = html;
 }
 
 async function loadOtherSheets(){
   const data18 = await loadSheetPromise("1.8","A1:E12");
-  document.getElementById('sheet-18').innerHTML = tableToHTML(data18);
+  document.getElementById('sheet-18').innerHTML = tableToHTML(data18, "1.8");
 
   const databk = await loadSheetPromise("bk","A1:D7");
-  document.getElementById('sheet-bk').innerHTML = tableToHTML(databk);
+  document.getElementById('sheet-bk').innerHTML = tableToHTML(databk, "bk");
 
   const datack = await loadSheetPromise("ck","A2:C4");
-  document.getElementById('sheet-ck').innerHTML = tableToHTML(datack);
+  document.getElementById('sheet-ck').innerHTML = tableToHTML(datack, "ck");
 }
 
 async function reloadAllOrdered(){
