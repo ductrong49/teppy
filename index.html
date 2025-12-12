@@ -1,239 +1,197 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>BẢNG THI ĐẤU</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hiển thị 5 Sheet</title>
 
 <style>
-  :root{
-    --card-bg: rgba(255,255,255,0.92);
-    --border: #1a4e9e;
-  }
-  *{ box-sizing:border-box; }
   body{
     margin:0;
-    font-family: Arial, Helvetica, sans-serif;
-    background:url("image.jpg") center/cover fixed no-repeat;
-    padding:16px;
-    font-size:clamp(15px,4vw,18px);
+    font-family:Arial, sans-serif;
+    background:url("image.jpg") center/cover fixed;
+    padding:20px;
   }
-  .container{
-    max-width:950px;
-    margin:auto;
-  }
-
-  h1,h2{
-    text-align:center;
-    margin:0;
-    padding:0;
-    color:#fff;
-    text-shadow:1px 1px 3px #000;
-  }
-  h1{ font-size:1.4rem; margin-bottom:4px; }
-  h2{ font-size:1.1rem; margin-bottom:16px; }
-
-  /* Vuốt ngang */
-  .top-scroll{
-    display:flex;
-    gap:14px;
-    overflow-x:auto;
-    padding:14px 0 20px;
-  }
-  .top-block{
-    min-width:180px;
-    background:var(--card-bg);
-    border-radius:14px;
-    border:2px solid var(--border);
-    padding:12px;
-    box-shadow:0 3px 8px rgba(0,0,0,0.25);
-  }
-  .top-title{
-    text-align:center;
-    font-weight:700;
-    margin-bottom:8px;
-    color:var(--border);
-  }
-  .top-card{
-    background:#fff;
+  h2{
+    background:#ffffffcc;
+    padding:10px;
     border-radius:8px;
-    padding:8px;
-    text-align:center;
-    border:1px solid #ccc;
-    margin-bottom:8px;
   }
-
-  /* Khối dọc */
-  .section{
-    margin:26px 0;
+  .block{
+    background:#ffffffdd;
     padding:12px;
-    background:var(--card-bg);
-    border-radius:12px;
-    border:2px solid var(--border);
-    box-shadow:0 3px 10px rgba(0,0,0,0.20);
-  }
-  .section-title{
-    font-weight:700;
-    margin-bottom:10px;
-    text-align:center;
-    color:#1a3e6e;
+    border-radius:10px;
+    margin-bottom:25px;
+    border:2px solid #444;
   }
   table{
     width:100%;
     border-collapse:collapse;
-    background:white;
+    margin-bottom:20px;
   }
-  th,td{
-    border:1px solid #555;
-    padding:6px 6px;
-    text-align:center;
+  td,th{
+    border:1px solid #444;
+    padding:6px 8px;
+    text-align:left;
   }
-  th{ background:#d9ecff; font-weight:700; }
-
+  .section-title{
+    padding:6px;
+    font-weight:bold;
+    background:#eee;
+    margin:15px 0 5px;
+    border-left:5px solid #333;
+  }
 </style>
-</head>
-<body>
-<div class="container">
 
-  <h1>PICKLEBALL CUP</h1>
-  <h2>TEPPY & LADIES — 21/12/2025</h2>
-
-  <!-- SHEET DOI -->
-  <div class="section">
-    <div class="section-title">DANH SÁCH BẢNG (Sheet doi A1:B23)</div>
-    <div id="topScroll" class="top-scroll"></div>
-  </div>
-
-  <div id="bangSection"></div>
-  <div id="s18Section"></div>
-  <div id="bkSection"></div>
-  <div id="ckSection"></div>
-
-</div>
-
+<script src="https://www.gstatic.com/charts/loader.js"></script>
 <script>
-const ID = "1QOnDy3RJydEpNXnuTdRzUTwCNohp00FzZxA7xCraXAY";
-const API = s => `https://docs.google.com/spreadsheets/d/${ID}/gviz/tq?sheet=${encodeURIComponent(s)}&tqx=out:json`;
+google.charts.load('current', {'packages':['table']});
 
-function escapeHTML(s){
-  return (s??"").toString()
-    .replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
-}
+const SHEET_ID = "1QOnDy3RJydEpNXnuTdRzUTwCNohp00FzZxA7xCraXAY";
 
-async function loadSheet(name){
-  const res = await fetch(API(name));
-  let t = await res.text();
-  t = t.substring(t.indexOf("(")+1, t.lastIndexOf(")"));
-  const json = JSON.parse(t);
-
-  return json.table.rows.map(r =>
-    r.c ? r.c.map(c => c?.v ?? "") : []
+/* HÀM ĐỌC MỘT SHEET */
+function loadSheet(sheetName, range, callback){
+  let query = new google.visualization.Query(
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${sheetName}&range=${range}`
   );
+  query.send((res)=>{
+    if(res.isError()){ callback(null); return; }
+    const data = res.getDataTable();
+    callback(data);
+  });
 }
 
-/* ----------------- SHEET DOI – 4 KHỐI VUỐT NGANG ------------------ */
-function renderDoi(rows){
-  const top = document.getElementById("topScroll");
-  top.innerHTML = "";
-
-  const titles = ["Bảng A", "Bảng B", "Bảng C", "Bảng D"];
-  const blockSize = 5;
-  let start = 0;
-
-  for(let i=0;i<4;i++){
-    const block = rows.slice(start, start + blockSize);
-    start += blockSize;
-
-    const d = document.createElement("div");
-    d.className = "top-block";
-    d.innerHTML = `<div class="top-title">${titles[i]}</div>`;
-
-    block.forEach(r=>{
-      if(!r[0] && !r[1]) return;
-      d.innerHTML += `
-        <div class="top-card">
-          <div>${escapeHTML(r[0])}</div>
-          <div>${escapeHTML(r[1])}</div>
-        </div>`;
-    });
-
-    top.appendChild(d);
-  }
-}
-
-/* ----------------- RENDER TABLE DẠNG 1 KHỐI ------------------ */
-function renderBlock(rows, title, toId){
-  const wrap = document.getElementById(toId);
-  const sec = document.createElement("div");
-  sec.className = "section";
-  sec.innerHTML = `<div class="section-title">${title}</div>`;
-
-  if(rows.length === 0){
-    sec.innerHTML += "<div>Không có dữ liệu</div>";
-    wrap.appendChild(sec);
-    return;
-  }
-
-  let html = "<table>";
-  rows.forEach(r=>{
+/* TẠO HTML TỪ DATA */
+function tableToHTML(data){
+  let html = "<table><tbody>";
+  for(let r=0; r<data.getNumberOfRows(); r++){
     html += "<tr>";
-    for(let i=0;i<7;i++){
-      html += `<td>${escapeHTML(r[i] ?? "")}</td>`;
+    for(let c=0; c<data.getNumberOfColumns(); c++){
+      html += `<td>${data.getValue(r,c) ?? ""}</td>`;
     }
     html += "</tr>";
+  }
+  html += "</tbody></table>";
+  return html;
+}
+
+/* --------------------------- */
+/* 1) SHEET DOI – 4 bảng A–D   */
+/* --------------------------- */
+function loadDoi(){
+  loadSheet("doi","A1:B23",(data)=>{
+    if(!data) return;
+
+    const labels = ["Bảng A","Bảng B","Bảng C","Bảng D"];
+    const blockSize = Math.floor(data.getNumberOfRows()/4);
+
+    let html = "";
+
+    for(let i=0;i<4;i++){
+      let start = i*blockSize;
+      let end   = start + blockSize;
+
+      let rows = [];
+      for(let r=start; r<end; r++){
+        let row=[];
+        for(let c=0;c<2;c++){
+          row.push(data.getValue(r,c) ?? "");
+        }
+        rows.push(row);
+      }
+
+      html += `<div class="section-title">${labels[i]}</div>`;
+      html += tableToHTML({
+        getNumberOfRows:()=>rows.length,
+        getNumberOfColumns:()=>2,
+        getValue:(r,c)=>rows[r][c]
+      });
+    }
+
+    document.getElementById("sheet-doi").innerHTML = html;
   });
-  html += "</table>";
-
-  sec.innerHTML += html;
-  wrap.appendChild(sec);
 }
 
-/* ----------------- LOAD TẤT CẢ ------------------ */
-async function loadAll(){
+/* --------------------------- */
+/* 2) SHEET BANG – 4 khối      */
+/* --------------------------- */
+function loadBang(){
+  let ranges = [
+    "A2:G8",
+    "A11:G17",
+    "A20:G26",
+    "A29:G35"
+  ];
+  let html = "";
+  let loaded = 0;
 
-  /* SHEET DOI */
-  const doi = await loadSheet("doi");
-  renderDoi(doi.slice(0,23));
-
-  /* SHEET BANG: chia 4 khối đúng vùng */
-  const bang = await loadSheet("bang");
-
-  const blockA = bang.slice(1,8);     // A2:G8
-  const blockB = bang.slice(10,17);   // A11:G17
-  const blockC = bang.slice(19,26);   // A20:G26
-  const blockD = bang.slice(28,35);   // A29:G35
-
-  renderBlock(blockA, "BẢNG A – Sheet bang (A2:G8)", "bangSection");
-  renderBlock(blockB, "BẢNG B – Sheet bang (A11:G17)", "bangSection");
-  renderBlock(blockC, "BẢNG C – Sheet bang (A20:G26)", "bangSection");
-  renderBlock(blockD, "BẢNG D – Sheet bang (A29:G35)", "bangSection");
-
-  /* SHEET 1.8 */
-  renderBlock(
-    (await loadSheet("1.8")).slice(0,12),
-    "BẢNG 1.8 – (A1:E12)",
-    "s18Section"
-  );
-
-  /* SHEET bk */
-  renderBlock(
-    (await loadSheet("bk")).slice(0,7),
-    "BẢNG BK – (A1:D7)",
-    "bkSection"
-  );
-
-  /* SHEET ck */
-  const ckFull = await loadSheet("ck");
-  renderBlock(
-    ckFull.slice(1,4),
-    "BẢNG CK – (A2:C4)",
-    "ckSection"
-  );
+  ranges.forEach((range, idx)=>{
+    loadSheet("bang", range, (data)=>{
+      html += `<div class="section-title">Khối ${idx+1}</div>`;
+      html += tableToHTML(data);
+      loaded++;
+      if(loaded===4){
+        document.getElementById("sheet-bang").innerHTML = html;
+      }
+    });
+  });
 }
 
-loadAll();
-setInterval(loadAll, 1000);   // cập nhật mỗi 1 giây
+/* các sheet đơn */
+function load18(){
+  loadSheet("1.8","A1:E12", (data)=>{
+    document.getElementById("sheet-18").innerHTML = tableToHTML(data);
+  });
+}
+function loadBk(){
+  loadSheet("bk","A1:D7", (data)=>{
+    document.getElementById("sheet-bk").innerHTML = tableToHTML(data);
+  });
+}
+function loadCk(){
+  loadSheet("ck","A2:C4", (data)=>{
+    document.getElementById("sheet-ck").innerHTML = tableToHTML(data);
+  });
+}
+
+google.charts.setOnLoadCallback(()=>{
+  loadDoi();
+  loadBang();
+  load18();
+  loadBk();
+  loadCk();
+});
 </script>
+
+</head>
+<body>
+
+<h1 style="color:white;text-shadow:2px 2px 4px #000;">HIỂN THỊ DỮ LIỆU 5 SHEET</h1>
+
+<div class="block">
+  <h2>Sheet: ĐỘI</h2>
+  <div id="sheet-doi"></div>
+</div>
+
+<div class="block">
+  <h2>Sheet: BẢNG</h2>
+  <div id="sheet-bang"></div>
+</div>
+
+<div class="block">
+  <h2>Sheet: 1.8</h2>
+  <div id="sheet-18"></div>
+</div>
+
+<div class="block">
+  <h2>Sheet: BK</h2>
+  <div id="sheet-bk"></div>
+</div>
+
+<div class="block">
+  <h2>Sheet: CK</h2>
+  <div id="sheet-ck"></div>
+</div>
 
 </body>
 </html>
