@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hiển thị 5 Sheet</title>
+<title>TEPPY & LADIES PICKLEBALL CUP</title>
 
 <style>
   body{
@@ -12,11 +12,29 @@
     background:url("image.jpg") center/cover fixed;
     padding:20px;
   }
-  h2{
-    background:#ffffffcc;
-    padding:10px;
-    border-radius:8px;
+
+  h1{
+    text-align:center;
+    color:white;
+    margin:0;
+    font-size:32px;
+    text-shadow:2px 2px 5px black;
   }
+  h2{
+    text-align:center;
+    color:white;
+    margin:0;
+    font-size:28px;
+    text-shadow:2px 2px 5px black;
+  }
+  h3{
+    text-align:center;
+    color:white;
+    margin:10px 0 30px;
+    font-size:22px;
+    text-shadow:2px 2px 5px black;
+  }
+
   .block{
     background:#ffffffdd;
     padding:12px;
@@ -49,7 +67,7 @@ google.charts.load('current', {'packages':['table']});
 
 const SHEET_ID = "1QOnDy3RJydEpNXnuTdRzUTwCNohp00FzZxA7xCraXAY";
 
-/* Hàm load 1 sheet */
+/* Load 1 sheet */
 function loadSheet(sheetName, range, callback){
   let query = new google.visualization.Query(
     `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${sheetName}&range=${range}`
@@ -60,7 +78,7 @@ function loadSheet(sheetName, range, callback){
   });
 }
 
-/* Chuyển DataTable thành bảng HTML */
+/* DataTable -> HTML */
 function tableToHTML(data){
   let html = "<table><tbody>";
 
@@ -76,15 +94,15 @@ function tableToHTML(data){
   return html;
 }
 
-/* --------------------------- */
-/* 1) SHEET DOI – 4 KHỐI FIXED */
-/* --------------------------- */
+/* ============= */
+/* SHEET DOI     */
+/* ============= */
 function loadDoi(){
   const ranges = [
-    "A1:B5",
-    "A7:B11",
-    "A13:B17",
-    "A19:B23"
+    "A1:B5",   // Bảng A
+    "A7:B11",  // Bảng B
+    "A13:B17", // Bảng C
+    "A19:B23"  // Bảng D
   ];
 
   const labels = ["Bảng A","Bảng B","Bảng C","Bảng D"];
@@ -105,9 +123,9 @@ function loadDoi(){
   });
 }
 
-/* --------------------------- */
-/* 2) SHEET BANG – 4 KHỐI FIXED */
-/* --------------------------- */
+/* ============= */
+/* SHEET BẢNG    */
+/* ============= */
 function loadBang(){
   const ranges = [
     "A2:G8",
@@ -132,38 +150,47 @@ function loadBang(){
   });
 }
 
-/* Các sheet đơn */
+/* SHEET 1.8 */
 function load18(){
   loadSheet("1.8", "A1:E12", (data)=>{
     document.getElementById("sheet-18").innerHTML = tableToHTML(data);
   });
 }
 
+/* SHEET BK */
 function loadBk(){
   loadSheet("bk", "A1:D7", (data)=>{
     document.getElementById("sheet-bk").innerHTML = tableToHTML(data);
   });
 }
 
+/* SHEET CK */
 function loadCk(){
   loadSheet("ck", "A2:C4", (data)=>{
     document.getElementById("sheet-ck").innerHTML = tableToHTML(data);
   });
 }
 
-google.charts.setOnLoadCallback(()=>{
+function reloadAll(){
   loadDoi();
   loadBang();
   load18();
   loadBk();
   loadCk();
+}
+
+google.charts.setOnLoadCallback(()=>{
+  reloadAll();
+  setInterval(reloadAll, 1000);
 });
 </script>
 
 </head>
 <body>
 
-<h1 style="color:white;text-shadow:2px 2px 4px #000;">HIỂN THỊ DỮ LIỆU 5 SHEET</h1>
+<h1>TEPPY and LADIES</h1>
+<h2>PICKLEBALL CUP</h2>
+<h3>21/12/2025</h3>
 
 <div class="block">
   <h2>SHEET: ĐỘI</h2>
