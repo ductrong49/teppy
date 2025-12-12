@@ -45,9 +45,11 @@
   td,th{
     border:1px solid #444;
     padding:6px 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+
+    /* CHO PHÉP XUỐNG DÒNG */
+    white-space: normal !important;
+    word-break: break-word;
+
     font-size: clamp(8px, 1.4vw, 18px);
   }
 
@@ -98,7 +100,16 @@ function loadSheetPromise(sheetName, range){
   });
 }
 
-/* DataTable -> HTML table WITH " - " NEWLINE SUPPORT */
+/* ============================
+   XỬ LÝ XUỐNG DÒNG CHO CỘT TÙY CHỌN
+   ============================ */
+
+/* Cột tùy chọn là cột số 5 → index = 4  
+   (nếu bạn muốn đổi cột khác, đổi số dưới đây)
+*/
+const COLUMN_WITH_LINEBREAK = 4;
+
+/* DataTable -> HTML table */
 function tableToHTML(data){
   if(!data) return '<div style="padding:8px;color:#a00">Không thể tải dữ liệu</div>';
 
@@ -108,10 +119,13 @@ function tableToHTML(data){
     html += "<tr>";
 
     for(let c=0;c<data.getNumberOfColumns();c++){
-      let cell = (data.getValue(r,c) ?? "").toString();
+      let cell = data.getValue(r,c) ?? "";
 
-      /* ✨ Xuống dòng đúng chuẩn ở dạng " - " */
-      cell = cell.replace(/ - /g, " -\u200B ");
+      // ---- CHỈ XUỐNG DÒNG KHI GẶP " - " ----
+      // ---- CHỈ ÁP DỤNG CHO CỘT TÙY CHỌN ----
+      if (c === COLUMN_WITH_LINEBREAK) {
+        cell = cell.toString().replace(/ - /g, "<br>");
+      }
 
       html += `<td>${cell}</td>`;
     }
@@ -138,10 +152,9 @@ async function loadDoiOrdered(){
   let html = '<div class="doi-scroll">';
   for(const r of ranges){
     const data = await loadSheetPromise("doi", r.range);
-    let blockHtml = `<div class="doi-card"><div class="section-title" style="margin:0 0 8px 0">${r.label}</div>`;
-    blockHtml += tableToHTML(data);
-    blockHtml += '</div>';
-    html += blockHtml;
+    html += `<div class="doi-card"><div class="section-title" style="margin:0 0 8px 0">${r.label}</div>`;
+    html += tableToHTML(data);
+    html += '</div>';
   }
   html += '</div>';
 
@@ -162,6 +175,7 @@ async function loadBangOrdered(){
     html += `<div class="section-title">${r.label}</div>`;
     html += tableToHTML(data);
   }
+
   document.getElementById('sheet-bang').innerHTML = html;
 }
 
@@ -184,7 +198,7 @@ async function reloadAllOrdered(){
 
 google.charts.setOnLoadCallback(()=>{
   reloadAllOrdered();
-  setInterval(reloadAllOrdered, 60000); // 60s refresh
+  setInterval(reloadAllOrdered, 60000);
 });
 </script>
 </head>
