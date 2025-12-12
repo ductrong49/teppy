@@ -1,141 +1,186 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>BẢNG THI ĐẤU</title>
-
 <style>
-  body{margin:0; background:#f6f7fb; font-family:Arial, sans-serif;}
-  .wrap{padding:10px;}
-
-  /* --- TOP GROUPS (sheet doi) --- */
-  .top-groups{
-    display:flex; gap:10px; overflow-x:auto;
-    padding:10px 0; margin-bottom:20px;
+  :root{
+    --bg:#f4f7fb; --card:#fff; --accent:#2b6cb0;
+    --radius:12px; --gap:12px;
   }
-  .group-box{
-    min-width:180px; background:white; border-radius:10px;
-    padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1);
-  }
-  .group-title{font-weight:bold; margin-bottom:6px; font-size:16px; color:#333;}
-  table{width:100%; border-collapse:collapse; background:white;}
-  td, th{padding:6px 8px; border:1px solid #ddd; font-size:14px;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:#222}
+  .container{max-width:980px;margin:0 auto;padding:14px;font-size:clamp(15px,4.2vw,18px)}
+  h1,h2{margin:0;text-align:center}
+  h1{font-size:1.25rem} h2{font-size:1rem;color:#444;margin-bottom:8px}
 
-  .section-title{
-    font-weight:bold; font-size:18px;
-    margin:15px 0 10px; color:#333;
+  /* TOP GROUPS */
+  .top-scroll{display:flex;gap:14px;overflow-x:auto;padding:10px 0 18px}
+  .top-block{min-width:160px;background:var(--card);border-radius:12px;border:2px solid var(--accent);padding:10px;box-shadow:0 3px 8px rgba(0,0,0,0.08)}
+  .top-block-title{font-weight:700;margin-bottom:8px;color:var(--accent);text-align:center}
+  .top-card{background:#fff;border-radius:8px;padding:8px;border:1px solid #e6e6e6;text-align:center;margin-bottom:8px}
+  .top-card div:first-child{font-weight:600}
+
+  /* Sections */
+  .section-title{font-weight:700;margin:18px 0 8px;color:#333}
+  .table-wrap{background:var(--card);padding:8px;border-radius:10px;border:2px solid #e9eef8;box-shadow:0 2px 6px rgba(0,0,0,0.04);overflow:auto}
+  table{width:100%;border-collapse:collapse;font-size:0.9rem}
+  th,td{padding:6px 8px;border:1px solid #ddd;text-align:center;background:#fff}
+  th{background:#dff0ff;font-weight:700}
+
+  @media(max-width:420px){
+    th,td{font-size:0.78rem;padding:5px}
+    .top-block{min-width:140px}
   }
 </style>
 </head>
-
 <body>
-<div class="wrap">
+<div class="container">
+  <h1>TEPPY and LADIES</h1>
+  <h2>PICKLEBALL CUP — 21/12/2025</h2>
 
-  <!-- SHEET 1: DOI -->
-  <div class="section-title">DANH SÁCH ĐỘI</div>
-  <div id="topGroups" class="top-groups"></div>
+  <!-- 1) sheet doi -> TOP GROUPS -->
+  <div class="section-title">Danh sách đội (4 khối từ sheet "doi")</div>
+  <div id="topGroups" class="top-scroll" aria-label="Top groups"></div>
 
-  <!-- SHEET 2 -->
-  <div class="section-title">BẢNG ĐẤU</div>
-  <div id="sheet_bang"></div>
+  <!-- 2) sheet bang -->
+  <div class="section-title">Bảng chính (sheet "bang")</div>
+  <div id="sheet_bang" class="table-wrap"></div>
 
-  <!-- SHEET 3 -->
-  <div class="section-title">VÒNG 1/8</div>
-  <div id="sheet_18"></div>
+  <!-- 3) sheet 1.8 -->
+  <div class="section-title">Bảng phụ (sheet "1.8")</div>
+  <div id="sheet_18" class="table-wrap"></div>
 
-  <!-- SHEET 4 -->
-  <div class="section-title">BÁN KẾT – CHUNG KẾT</div>
-  <div id="sheet_bkck"></div>
+  <!-- 4) sheet bk.ck -->
+  <div class="section-title">Bảng phụ (sheet "bk.ck")</div>
+  <div id="sheet_bkck" class="table-wrap"></div>
 
-  <!-- SHEET 5 -->
-  <div class="section-title">CHUNG KẾT</div>
-  <div id="sheet_ck"></div>
-
+  <!-- 5) sheet ck -->
+  <div class="section-title">Bảng phụ (sheet "ck")</div>
+  <div id="sheet_ck" class="table-wrap"></div>
 </div>
 
 <script>
+/* ========== CẤU HÌNH ========== */
 const SHEET_ID = "1QOnDy3RJydEpNXnuTdRzUTwCNohp00FzZxA7xCraXAY";
-const API = (gid)=>`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${gid}&tqx=out:json`;
+const API = (sheetName) => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(sheetName)}&tqx=out:json`;
 
-/* LOAD SHEET — ổn định, ép đủ 30 cột */
-async function loadSheet(gid){
-  const res = await fetch(API(gid));
+/* ========== HELPER: an toàn đọc sheet JSON (ép đủ 30 cột) ========== */
+async function loadSheetByName(sheetName){
+  const res = await fetch(API(sheetName));
+  if(!res.ok) throw new Error('Không thể load sheet: ' + sheetName + ' (HTTP ' + res.status + ')');
   let text = await res.text();
   text = text.substring(text.indexOf("(")+1, text.lastIndexOf(")"));
   const json = JSON.parse(text);
-
-  return json.table.rows.map(r=>{
+  return (json.table.rows || []).map(r=>{
     const row = [];
-    for(let i=0; i<30; i++){
-      row.push(r.c && r.c[i] && r.c[i].v ? r.c[i].v : "");
+    for(let i=0;i<30;i++){
+      row.push(r.c && r.c[i] && r.c[i].v !== undefined ? r.c[i].v : "");
     }
     return row;
   });
 }
 
-/* Cắt vùng (I:J) */
+/* lấy vùng 1-based, colStart colEnd exclusive (0-based) */
 function getRangeRows(rows, startRow, endRow, colStart, colEnd){
   const out = [];
-  for(let r = startRow - 1; r <= endRow - 1; r++){
+  for(let r = startRow-1; r <= endRow-1; r++){
     const row = rows[r] || Array(colEnd).fill("");
     out.push(row.slice(colStart, colEnd));
   }
   return out;
 }
 
-/* Render bảng FULL sheet */
-function renderFullTable(rows){
-  let html = "<table>";
-  rows.forEach(r=>{
-    html += "<tr>" + r.map(c=>`<td>${c}</td>`).join("") + "</tr>";
+/* render top block (2 cột: tên + điểm) */
+function renderTopBlock(rows2cols, title){
+  const wrap = document.createElement('div');
+  wrap.className = 'top-block';
+  const t = document.createElement('div');
+  t.className = 'top-block-title';
+  t.textContent = title;
+  wrap.appendChild(t);
+  rows2cols.forEach(r=>{
+    const a = r[0] ?? "";
+    const b = r[1] ?? "";
+    const card = document.createElement('div');
+    card.className = 'top-card';
+    card.innerHTML = `<div>${escapeHtml(a)}</div><div>${escapeHtml(b)}</div>`;
+    wrap.appendChild(card);
   });
-  html += "</table>";
+  return wrap;
+}
+
+/* escape */
+function escapeHtml(s){
+  if(s === null || s === undefined) return "";
+  return String(s).replace(/[&<>"']/g, m =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])
+  );
+}
+
+/* render full table to HTML */
+function renderFullTableRows(rows){
+  if(!rows || !rows.length) return '<div style="padding:8px">Không có dữ liệu</div>';
+  let html = '<table><thead><tr>';
+  // use first row as header
+  rows[0].forEach(h => html += `<th>${escapeHtml(h)}</th>`);
+  html += '</tr></thead><tbody>';
+  for(let i=1;i<rows.length;i++){
+    html += '<tr>';
+    rows[i].forEach(c => html += `<td>${escapeHtml(c)}</td>`);
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
   return html;
 }
 
-/* Render group I:J */
-function renderGroup(title, data){
-  let html = `<div class="group-box"><div class="group-title">${title}</div><table>`;
-  data.forEach(r=> html += `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>` );
-  html += "</table></div>";
-  return html;
-}
-
+/* ========== MAIN ========== */
 async function loadAll(){
-  /* ---- 1. SHEET "doi" (4 khối I:J) ---- */
-  const doi = await loadSheet("453451072"); // GID sheet doi
+  try{
+    // 1) sheet doi -> TOP GROUPS (I:J blocks)
+    const doi = await loadSheetByName('doi');
+    const k1 = getRangeRows(doi, 2, 6, 8, 10);   // I2:J6
+    const k2 = getRangeRows(doi, 11,15, 8, 10);  // I11:J15
+    const k3 = getRangeRows(doi, 20,24, 8, 10);  // I20:J24
+    const k4 = getRangeRows(doi, 29,33, 8, 10);  // I29:J33
 
-  const g1 = getRangeRows(doi,2,6,8,10);
-  const g2 = getRangeRows(doi,11,15,8,10);
-  const g3 = getRangeRows(doi,20,24,8,10);
-  const g4 = getRangeRows(doi,29,33,8,10);
+    const topGroups = document.getElementById('topGroups');
+    topGroups.innerHTML = ''; // reset
+    topGroups.appendChild(renderTopBlock(k1, 'Khối 1 (I2:J6)'));
+    topGroups.appendChild(renderTopBlock(k2, 'Khối 2 (I11:J15)'));
+    topGroups.appendChild(renderTopBlock(k3, 'Khối 3 (I20:J24)'));
+    topGroups.appendChild(renderTopBlock(k4, 'Khối 4 (I29:J33)'));
 
-  document.getElementById("topGroups").innerHTML =
-    renderGroup("Nhóm 1", g1) +
-    renderGroup("Nhóm 2", g2) +
-    renderGroup("Nhóm 3", g3) +
-    renderGroup("Nhóm 4", g4);
+    // 2) sheet bang -> full table
+    const bang = await loadSheetByName('bang');
+    document.getElementById('sheet_bang').innerHTML = renderFullTableRows(bang);
 
-  /* ---- 2. SHEET bang ---- */
-  const bang = await loadSheet("0");
-  document.getElementById("sheet_bang").innerHTML = renderFullTable(bang);
+    // 3) sheet 1.8 -> full table
+    const s18 = await loadSheetByName('1.8');
+    document.getElementById('sheet_18').innerHTML = renderFullTableRows(s18);
 
-  /* ---- 3. SHEET 1.8 ---- */
-  const s18 = await loadSheet("2139851109");
-  document.getElementById("sheet_18").innerHTML = renderFullTable(s18);
+    // 4) sheet bk.ck -> full table
+    const bkck = await loadSheetByName('bk.ck');
+    document.getElementById('sheet_bkck').innerHTML = renderFullTableRows(bkck);
 
-  /* ---- 4. SHEET bk.ck ---- */
-  const bkck = await loadSheet("808351424");
-  document.getElementById("sheet_bkck").innerHTML = renderFullTable(bkck);
+    // 5) sheet ck -> full table
+    const ck = await loadSheetByName('ck');
+    document.getElementById('sheet_ck').innerHTML = renderFullTableRows(ck);
 
-  /* ---- 5. SHEET ck ---- */
-  const ck = await loadSheet("815594494");
-  document.getElementById("sheet_ck").innerHTML = renderFullTable(ck);
+  }catch(err){
+    console.error(err);
+    const msg = document.createElement('div');
+    msg.style.padding = '12px';
+    msg.style.background = '#fff3f3';
+    msg.style.border = '1px solid #ffd6d6';
+    msg.style.borderRadius = '8px';
+    msg.textContent = 'Lỗi khi tải dữ liệu: ' + (err.message || err);
+    document.body.prepend(msg);
+  }
 }
 
 loadAll();
 </script>
-
 </body>
 </html>
