@@ -12,6 +12,17 @@
     background:url("image.jpg") center/cover fixed;
     padding:20px;
   }
+
+  h1{
+    text-align:center;
+    color:white;
+    text-shadow:2px 2px 4px #000;
+    margin-bottom:30px;
+    line-height:1.4;
+    white-space:nowrap;
+    font-size: clamp(20px, 4vw, 40px);
+  }
+
   h2{
     background:#ffffffcc;
     padding:10px;
@@ -33,8 +44,6 @@
   td,th{
     border:1px solid #444;
     padding:6px 8px;
-
-    /* NGĂN XUỐNG DÒNG + TỰ THU NHỎ CHỮ */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -70,7 +79,7 @@ function loadSheet(sheetName, range, callback){
   });
 }
 
-/* Convert DataTable to HTML */
+/* Convert DataTable → HTML Table */
 function tableToHTML(data){
   let html = "<table><tbody>";
 
@@ -87,14 +96,14 @@ function tableToHTML(data){
 }
 
 /* --------------------------- */
-/* 1) SHEET DOI – ĐÚNG THỨ TỰ */
+/* 1) SHEET DOI */
 /* --------------------------- */
 function loadDoi(){
   const ranges = [
-    "A1:B5",   // Bảng A
-    "A7:B11",  // Bảng B
-    "A13:B17", // Bảng C
-    "A19:B23"  // Bảng D
+    "A1:B5",  
+    "A7:B11",
+    "A13:B17",
+    "A19:B23"
   ];
 
   const labels = ["Bảng A","Bảng B","Bảng C","Bảng D"];
@@ -116,7 +125,7 @@ function loadDoi(){
 }
 
 /* --------------------------- */
-/* 2) SHEET BANG – ĐÚNG THỨ TỰ */
+/* 2) SHEET BANG (ĐÚNG THỨ TỰ) */
 /* --------------------------- */
 function loadBang(){
   const ranges = [
@@ -173,7 +182,11 @@ google.charts.setOnLoadCallback(()=>{
 </head>
 <body>
 
-<h1 style="color:white;text-shadow:2px 2px 4px #000;">HIỂN THỊ DỮ LIỆU 5 SHEET</h1>
+<h1>
+  TEPPY and LADIES<br>
+  PICKLEBALL CUP<br>
+  21/12/2025
+</h1>
 
 <div class="block">
   <h2>SHEET: ĐỘI</h2>
@@ -190,7 +203,7 @@ google.charts.setOnLoadCallback(()=>{
   <div id="sheet-18"></div>
 </div>
 
-<div class="block">
+<div .class="block">
   <h2>SHEET: BK</h2>
   <div id="sheet-bk"></div>
 </div>
