@@ -49,107 +49,104 @@ google.charts.load('current', {'packages':['table']});
 
 const SHEET_ID = "1QOnDy3RJydEpNXnuTdRzUTwCNohp00FzZxA7xCraXAY";
 
-/* HÀM ĐỌC MỘT SHEET */
+/* Hàm load 1 sheet */
 function loadSheet(sheetName, range, callback){
   let query = new google.visualization.Query(
     `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${sheetName}&range=${range}`
   );
   query.send((res)=>{
     if(res.isError()){ callback(null); return; }
-    const data = res.getDataTable();
-    callback(data);
+    callback(res.getDataTable());
   });
 }
 
-/* TẠO HTML TỪ DATA */
+/* Chuyển DataTable thành bảng HTML */
 function tableToHTML(data){
   let html = "<table><tbody>";
+
   for(let r=0; r<data.getNumberOfRows(); r++){
     html += "<tr>";
-    for(let c=0; c<data.getNumberOfColumns(); c++){
+    for(let c=0;c<data.getNumberOfColumns();c++){
       html += `<td>${data.getValue(r,c) ?? ""}</td>`;
     }
     html += "</tr>";
   }
+
   html += "</tbody></table>";
   return html;
 }
 
 /* --------------------------- */
-/* 1) SHEET DOI – 4 bảng A–D   */
+/* 1) SHEET DOI – 4 KHỐI FIXED */
 /* --------------------------- */
 function loadDoi(){
-  loadSheet("doi","A1:B23",(data)=>{
-    if(!data) return;
+  const ranges = [
+    "A1:B5",
+    "A7:B11",
+    "A13:B17",
+    "A19:B23"
+  ];
 
-    const labels = ["Bảng A","Bảng B","Bảng C","Bảng D"];
-    const blockSize = Math.floor(data.getNumberOfRows()/4);
+  const labels = ["Bảng A","Bảng B","Bảng C","Bảng D"];
 
-    let html = "";
+  let html = "";
+  let done = 0;
 
-    for(let i=0;i<5;i++){
-      let start = i*blockSize;
-      let end   = start + blockSize;
+  ranges.forEach((range, idx)=>{
+    loadSheet("doi", range, (data)=>{
+      html += `<div class="section-title">${labels[idx]}</div>`;
+      html += tableToHTML(data);
 
-      let rows = [];
-      for(let r=start; r<end; r++){
-        let row=[];
-        for(let c=0;c<2;c++){
-          row.push(data.getValue(r,c) ?? "");
-        }
-        rows.push(row);
+      done++;
+      if(done === 4){
+        document.getElementById("sheet-doi").innerHTML = html;
       }
-
-      html += `<div class="section-title">${labels[i]}</div>`;
-      html += tableToHTML({
-        getNumberOfRows:()=>rows.length,
-        getNumberOfColumns:()=>2,
-        getValue:(r,c)=>rows[r][c]
-      });
-    }
-
-    document.getElementById("sheet-doi").innerHTML = html;
+    });
   });
 }
 
 /* --------------------------- */
-/* 2) SHEET BANG – 4 khối      */
+/* 2) SHEET BANG – 4 KHỐI FIXED */
 /* --------------------------- */
 function loadBang(){
-  let ranges = [
+  const ranges = [
     "A2:G8",
     "A11:G17",
     "A20:G26",
     "A29:G35"
   ];
+
   let html = "";
-  let loaded = 0;
+  let done = 0;
 
   ranges.forEach((range, idx)=>{
     loadSheet("bang", range, (data)=>{
       html += `<div class="section-title">Khối ${idx+1}</div>`;
       html += tableToHTML(data);
-      loaded++;
-      if(loaded===4){
+
+      done++;
+      if(done === 4){
         document.getElementById("sheet-bang").innerHTML = html;
       }
     });
   });
 }
 
-/* các sheet đơn */
+/* Các sheet đơn */
 function load18(){
-  loadSheet("1.8","A1:E12", (data)=>{
+  loadSheet("1.8", "A1:E12", (data)=>{
     document.getElementById("sheet-18").innerHTML = tableToHTML(data);
   });
 }
+
 function loadBk(){
-  loadSheet("bk","A1:D7", (data)=>{
+  loadSheet("bk", "A1:D7", (data)=>{
     document.getElementById("sheet-bk").innerHTML = tableToHTML(data);
   });
 }
+
 function loadCk(){
-  loadSheet("ck","A2:C4", (data)=>{
+  loadSheet("ck", "A2:C4", (data)=>{
     document.getElementById("sheet-ck").innerHTML = tableToHTML(data);
   });
 }
@@ -169,27 +166,27 @@ google.charts.setOnLoadCallback(()=>{
 <h1 style="color:white;text-shadow:2px 2px 4px #000;">HIỂN THỊ DỮ LIỆU 5 SHEET</h1>
 
 <div class="block">
-  <h2>Sheet: ĐỘI</h2>
+  <h2>SHEET: ĐỘI</h2>
   <div id="sheet-doi"></div>
 </div>
 
 <div class="block">
-  <h2>Sheet: BẢNG</h2>
+  <h2>SHEET: BẢNG</h2>
   <div id="sheet-bang"></div>
 </div>
 
 <div class="block">
-  <h2>Sheet: 1.8</h2>
+  <h2>SHEET: 1.8</h2>
   <div id="sheet-18"></div>
 </div>
 
 <div class="block">
-  <h2>Sheet: BK</h2>
+  <h2>SHEET: BK</h2>
   <div id="sheet-bk"></div>
 </div>
 
 <div class="block">
-  <h2>Sheet: CK</h2>
+  <h2>SHEET: CK</h2>
   <div id="sheet-ck"></div>
 </div>
 
