@@ -145,10 +145,10 @@ async function loadDoiOrdered(){
 /* BANG: lấy từng khối theo thứ tự trên xuống */
 async function loadBangOrdered(){
   const ranges = [
-    {range:"A2:G8", label:"Khối 1 (A2:G8)"},
-    {range:"A11:G17", label:"Khối 2 (A11:G17)"},
-    {range:"A20:G26", label:"Khối 3 (A20:G26)"},
-    {range:"A29:G35", label:"Khối 4 (A29:G35)"}
+    {range:"A2:G8", label:"BẢNG A"},
+    {range:"A11:G17", label:"BẢNG B"},
+    {range:"A20:G26", label:"BẢNG C"},
+    {range:"A29:G35", label:"BẢNG D"}
   ];
 
   let html = "";
@@ -198,27 +198,27 @@ google.charts.setOnLoadCallback(()=>{
 <h2 class="title">21/12/2025</h2>
 
 <div class="block">
-  <div class="section-title">SHEET: ĐỘI</div>
+  <div class="section-title">DANH SÁCH ĐỘI</div>
   <div id="sheet-doi"></div>
 </div>
 
 <div class="block">
-  <div class="section-title">SHEET: BẢNG</div>
+  <div class="section-title">BẢNG THI ĐẤU</div>
   <div id="sheet-bang"></div>
 </div>
 
 <div class="block">
-  <div class="section-title">SHEET: 1.8</div>
+  <div class="section-title">VÒNG LOẠI 1/8</div>
   <div id="sheet-18"></div>
 </div>
 
 <div class="block">
-  <div class="section-title">SHEET: BK</div>
+  <div class="section-title">BÁN KẾT</div>
   <div id="sheet-bk"></div>
 </div>
 
 <div class="block">
-  <div class="section-title">SHEET: CK</div>
+  <div class="section-title">CHUNG KẾT</div>
   <div id="sheet-ck"></div>
 </div>
 
