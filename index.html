@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TEPPY & LADIES PICKLEBALL CUP</title>
+<title>Hiển thị 5 Sheet</title>
 
 <style>
   body{
@@ -12,29 +12,11 @@
     background:url("image.jpg") center/cover fixed;
     padding:20px;
   }
-
-  h1{
-    text-align:center;
-    color:white;
-    margin:0;
-    font-size:32px;
-    text-shadow:2px 2px 5px black;
-  }
   h2{
-    text-align:center;
-    color:white;
-    margin:0;
-    font-size:28px;
-    text-shadow:2px 2px 5px black;
+    background:#ffffffcc;
+    padding:10px;
+    border-radius:8px;
   }
-  h3{
-    text-align:center;
-    color:white;
-    margin:10px 0 30px;
-    font-size:22px;
-    text-shadow:2px 2px 5px black;
-  }
-
   .block{
     background:#ffffffdd;
     padding:12px;
@@ -47,17 +29,27 @@
     border-collapse:collapse;
     margin-bottom:20px;
   }
+
   td,th{
     border:1px solid #444;
     padding:6px 8px;
-    text-align:left;
+
+    /* NGĂN XUỐNG DÒNG + TỰ THU NHỎ CHỮ */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: clamp(12px, 1.4vw, 18px);
   }
+
   .section-title{
     padding:6px;
     font-weight:bold;
     background:#eee;
     margin:15px 0 5px;
     border-left:5px solid #333;
+
+    white-space: nowrap;
+    font-size: clamp(14px, 1.6vw, 20px);
   }
 </style>
 
@@ -78,7 +70,7 @@ function loadSheet(sheetName, range, callback){
   });
 }
 
-/* DataTable -> HTML */
+/* Convert DataTable to HTML */
 function tableToHTML(data){
   let html = "<table><tbody>";
 
@@ -94,9 +86,9 @@ function tableToHTML(data){
   return html;
 }
 
-/* ============= */
-/* SHEET DOI     */
-/* ============= */
+/* --------------------------- */
+/* 1) SHEET DOI – ĐÚNG THỨ TỰ */
+/* --------------------------- */
 function loadDoi(){
   const ranges = [
     "A1:B5",   // Bảng A
@@ -123,9 +115,9 @@ function loadDoi(){
   });
 }
 
-/* ============= */
-/* SHEET BẢNG    */
-/* ============= */
+/* --------------------------- */
+/* 2) SHEET BANG – ĐÚNG THỨ TỰ */
+/* --------------------------- */
 function loadBang(){
   const ranges = [
     "A2:G8",
@@ -150,47 +142,38 @@ function loadBang(){
   });
 }
 
-/* SHEET 1.8 */
+/* Sheet đơn */
 function load18(){
   loadSheet("1.8", "A1:E12", (data)=>{
     document.getElementById("sheet-18").innerHTML = tableToHTML(data);
   });
 }
 
-/* SHEET BK */
 function loadBk(){
   loadSheet("bk", "A1:D7", (data)=>{
     document.getElementById("sheet-bk").innerHTML = tableToHTML(data);
   });
 }
 
-/* SHEET CK */
 function loadCk(){
   loadSheet("ck", "A2:C4", (data)=>{
     document.getElementById("sheet-ck").innerHTML = tableToHTML(data);
   });
 }
 
-function reloadAll(){
+google.charts.setOnLoadCallback(()=>{
   loadDoi();
   loadBang();
   load18();
   loadBk();
   loadCk();
-}
-
-google.charts.setOnLoadCallback(()=>{
-  reloadAll();
-  setInterval(reloadAll, 1000);
 });
 </script>
 
 </head>
 <body>
 
-<h1>TEPPY and LADIES</h1>
-<h2>PICKLEBALL CUP</h2>
-<h3>21/12/2025</h3>
+<h1 style="color:white;text-shadow:2px 2px 4px #000;">HIỂN THỊ DỮ LIỆU 5 SHEET</h1>
 
 <div class="block">
   <h2>SHEET: ĐỘI</h2>
