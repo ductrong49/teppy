@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hiển thị 5 Sheet</title>
+<title>TEPPY and LADIES — PICKLEBALL CUP</title>
 
 <style>
   body{
@@ -17,28 +17,29 @@
     text-align:center;
     color:white;
     text-shadow:2px 2px 4px #000;
-    margin-bottom:30px;
-    line-height:1.4;
-    white-space:nowrap;
+    margin:0 0 6px 0;
+    line-height:1.2;
     font-size: clamp(20px, 4vw, 40px);
   }
-
-  h2{
-    background:#ffffffcc;
-    padding:10px;
-    border-radius:8px;
+  h2.title{
+    text-align:center;
+    color:white;
+    margin:0 0 18px 0;
+    font-size: clamp(16px, 3vw, 28px);
+    text-shadow:2px 2px 4px #000;
   }
+
   .block{
     background:#ffffffdd;
     padding:12px;
     border-radius:10px;
-    margin-bottom:25px;
+    margin-bottom:20px;
     border:2px solid #444;
   }
   table{
     width:100%;
     border-collapse:collapse;
-    margin-bottom:20px;
+    margin-bottom:8px;
   }
 
   td,th{
@@ -51,14 +52,28 @@
   }
 
   .section-title{
-    padding:6px;
-    font-weight:bold;
+    padding:8px;
+    font-weight:700;
     background:#eee;
-    margin:15px 0 5px;
+    margin:10px 0;
     border-left:5px solid #333;
-
     white-space: nowrap;
     font-size: clamp(14px, 1.6vw, 20px);
+  }
+
+  /* nhỏ cho khung DOI vuốt ngang (nếu muốn sau này) */
+  .doi-scroll{
+    display:flex;
+    gap:12px;
+    overflow-x:auto;
+    padding:8px 0;
+  }
+  .doi-card{
+    min-width:160px;
+    background:#fff;
+    border-radius:8px;
+    padding:8px;
+    border:1px solid #ccc;
   }
 </style>
 
@@ -68,148 +83,142 @@ google.charts.load('current', {'packages':['table']});
 
 const SHEET_ID = "1QOnDy3RJydEpNXnuTdRzUTwCNohp00FzZxA7xCraXAY";
 
-/* Load 1 sheet */
-function loadSheet(sheetName, range, callback){
-  let query = new google.visualization.Query(
-    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${sheetName}&range=${range}`
-  );
-  query.send((res)=>{
-    if(res.isError()){ callback(null); return; }
-    callback(res.getDataTable());
+/* Promise-based wrapper cho google.visualization.Query */
+function loadSheetPromise(sheetName, range){
+  return new Promise((resolve) => {
+    const q = new google.visualization.Query(
+      `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${encodeURIComponent(sheetName)}&range=${encodeURIComponent(range)}`
+    );
+    q.send(res=>{
+      if(res.isError()){
+        // resolve null để vẫn cho luồng chạy; bạn có thể handle lỗi riêng nếu cần
+        resolve(null);
+      } else {
+        resolve(res.getDataTable());
+      }
+    });
   });
 }
 
-/* Convert DataTable → HTML Table */
+/* DataTable -> HTML table */
 function tableToHTML(data){
+  if(!data) return '<div style="padding:8px;color:#a00">Không thể tải dữ liệu</div>';
   let html = "<table><tbody>";
-
-  for(let r=0; r<data.getNumberOfRows(); r++){
+  for(let r=0;r<data.getNumberOfRows();r++){
     html += "<tr>";
     for(let c=0;c<data.getNumberOfColumns();c++){
       html += `<td>${data.getValue(r,c) ?? ""}</td>`;
     }
     html += "</tr>";
   }
-
   html += "</tbody></table>";
   return html;
 }
 
-/* --------------------------- */
-/* 1) SHEET DOI */
-/* --------------------------- */
-function loadDoi(){
+/* ============================
+   LOAD & RENDER (theo thứ tự)
+   ============================ */
+
+/* DOI: lấy chính xác 4 range theo thứ tự và render theo thứ tự */
+async function loadDoiOrdered(){
   const ranges = [
-    "A1:B5",  
-    "A7:B11",
-    "A13:B17",
-    "A19:B23"
+    {range:"A1:B5", label:"Bảng A"},
+    {range:"A7:B11", label:"Bảng B"},
+    {range:"A13:B17", label:"Bảng C"},
+    {range:"A19:B23", label:"Bảng D"}
   ];
 
-  const labels = ["Bảng A","Bảng B","Bảng C","Bảng D"];
+  // lấy tuần tự từng range (await) để đảm bảo thứ tự hiển thị
+  let html = '<div class="doi-scroll">';
+  for(const r of ranges){
+    const data = await loadSheetPromise("doi", r.range);
+    let blockHtml = `<div class="doi-card"><div class="section-title" style="margin:0 0 8px 0">${r.label}</div>`;
+    blockHtml += tableToHTML(data);
+    blockHtml += '</div>';
+    html += blockHtml;
+  }
+  html += '</div>';
 
-  let html = "";
-  let done = 0;
-
-  ranges.forEach((range, idx)=>{
-    loadSheet("doi", range, (data)=>{
-      html += `<div class="section-title">${labels[idx]}</div>`;
-      html += tableToHTML(data);
-
-      done++;
-      if(done === 4){
-        document.getElementById("sheet-doi").innerHTML = html;
-      }
-    });
-  });
+  document.getElementById('sheet-doi').innerHTML = html;
 }
 
-/* --------------------------- */
-/* 2) SHEET BANG (ĐÚNG THỨ TỰ) */
-/* --------------------------- */
-function loadBang(){
+/* BANG: lấy từng khối theo thứ tự trên xuống */
+async function loadBangOrdered(){
   const ranges = [
-    "A2:G8",
-    "A11:G17",
-    "A20:G26",
-    "A29:G35"
+    {range:"A2:G8", label:"Khối 1 (A2:G8)"},
+    {range:"A11:G17", label:"Khối 2 (A11:G17)"},
+    {range:"A20:G26", label:"Khối 3 (A20:G26)"},
+    {range:"A29:G35", label:"Khối 4 (A29:G35)"}
   ];
 
   let html = "";
-  let done = 0;
-
-  ranges.forEach((range, idx)=>{
-    loadSheet("bang", range, (data)=>{
-      html += `<div class="section-title">Khối ${idx+1}</div>`;
-      html += tableToHTML(data);
-
-      done++;
-      if(done === 4){
-        document.getElementById("sheet-bang").innerHTML = html;
-      }
-    });
-  });
+  for(const r of ranges){
+    const data = await loadSheetPromise("bang", r.range);
+    html += `<div class="section-title">${r.label}</div>`;
+    html += tableToHTML(data);
+  }
+  document.getElementById('sheet-bang').innerHTML = html;
 }
 
-/* Sheet đơn */
-function load18(){
-  loadSheet("1.8", "A1:E12", (data)=>{
-    document.getElementById("sheet-18").innerHTML = tableToHTML(data);
-  });
+/* Các sheet khác giữ nguyên thứ tự */
+async function loadOtherSheets(){
+  const data18 = await loadSheetPromise("1.8","A1:E12");
+  document.getElementById('sheet-18').innerHTML = tableToHTML(data18);
+
+  const databk = await loadSheetPromise("bk","A1:D7");
+  document.getElementById('sheet-bk').innerHTML = tableToHTML(databk);
+
+  const datack = await loadSheetPromise("ck","A2:C4");
+  document.getElementById('sheet-ck').innerHTML = tableToHTML(datack);
 }
 
-function loadBk(){
-  loadSheet("bk", "A1:D7", (data)=>{
-    document.getElementById("sheet-bk").innerHTML = tableToHTML(data);
-  });
+/* Hàm tải tất cả theo thứ tự an toàn.
+   Gọi lần lượt để tránh race condition và đảm bảo thứ tự hiển thị.
+*/
+async function reloadAllOrdered(){
+  await loadDoiOrdered();    // DOI (4 blocks) — hiển thị trước
+  await loadBangOrdered();   // BANG (4 blocks)
+  await loadOtherSheets();   // 1.8, bk, ck
 }
 
-function loadCk(){
-  loadSheet("ck", "A2:C4", (data)=>{
-    document.getElementById("sheet-ck").innerHTML = tableToHTML(data);
-  });
-}
-
+/* thiết lập load ban đầu và auto-refresh 1s nếu bạn muốn */
+/* Nếu bạn không cần auto-refresh, bỏ setInterval */
 google.charts.setOnLoadCallback(()=>{
-  loadDoi();
-  loadBang();
-  load18();
-  loadBk();
-  loadCk();
+  // chạy lần đầu
+  reloadAllOrdered();
+  // nếu muốn auto update mỗi 1s uncomment dòng dưới:
+  // setInterval(reloadAllOrdered, 1000);
 });
 </script>
-
 </head>
 <body>
 
-<h1>
-  TEPPY and LADIES<br>
-  PICKLEBALL CUP<br>
-  21/12/2025
-</h1>
+<h1>TEPPY and LADIES</h1>
+<h2 class="title">PICKLEBALL CUP</h2>
+<h2 class="title">21/12/2025</h2>
 
 <div class="block">
-  <h2>SHEET: ĐỘI</h2>
+  <div class="section-title">SHEET: ĐỘI</div>
   <div id="sheet-doi"></div>
 </div>
 
 <div class="block">
-  <h2>SHEET: BẢNG</h2>
+  <div class="section-title">SHEET: BẢNG</div>
   <div id="sheet-bang"></div>
 </div>
 
 <div class="block">
-  <h2>SHEET: 1.8</h2>
+  <div class="section-title">SHEET: 1.8</div>
   <div id="sheet-18"></div>
 </div>
 
-<div .class="block">
-  <h2>SHEET: BK</h2>
+<div class="block">
+  <div class="section-title">SHEET: BK</div>
   <div id="sheet-bk"></div>
 </div>
 
 <div class="block">
-  <h2>SHEET: CK</h2>
+  <div class="section-title">SHEET: CK</div>
   <div id="sheet-ck"></div>
 </div>
 
